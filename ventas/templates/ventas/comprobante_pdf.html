@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: letter; margin: 1.8cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1f2937; margin: 0; }
+        .header { background-color: #0A2342; color: #ffffff; padding: 16px 20px; border-bottom: 4px solid #D4A017; }
+        .header-table { width: 100%; border-collapse: collapse; }
+        .header-table td { border: none; padding: 0; vertical-align: middle; }
+        .logo { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #D4A017; }
+        .brand-title { font-size: 20px; font-weight: bold; letter-spacing: 1px; color: #ffffff; margin: 0; }
+        .brand-sub { font-size: 11px; color: #D4A017; margin: 2px 0 0 0; }
+        .folio-box { text-align: right; }
+        .folio-badge { background-color: #D4A017; color: #0A2342; font-weight: bold; padding: 6px 10px; font-size: 13px; }
+        .info-box { margin-top: 18px; padding: 12px 15px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #0A2342; }
+        .info-box p { margin: 4px 0; }
+        table.items { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        table.items th { background-color: #0A2342; color: #ffffff; padding: 9px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #D4A017; }
+        table.items td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; }
+        table.items tr:nth-child(even) td { background-color: #f8fafc; }
+        .num { text-align: right; }
+        .total-box { margin-top: 20px; text-align: right; }
+        .total-pill { display: inline-block; background-color: #0A2342; color: #ffffff; padding: 10px 18px; border-right: 5px solid #D4A017; font-size: 15px; font-weight: bold; }
+        .footer { margin-top: 35px; padding-top: 10px; border-top: 1px solid #cbd5e1; text-align: center; font-size: 10px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                {% if logo_src %}
+                <td style="width: 72px;">
+                    <img src="{{ logo_src }}" class="logo" alt="Logo">
+                </td>
+                {% endif %}
+                <td>
+                    <p class="brand-title">DANDELION STAR</p>
+                    <p class="brand-sub">Comprobante Oficial de Venta</p>
+                </td>
+                <td class="folio-box">
+                    <span class="folio-badge">FOLIO #{{ venta.pk }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Cliente:</strong> {{ venta.cliente }}</p>
+        <p><strong>Fecha y hora:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+        <p><strong>Atendido por:</strong> {{ usuario.username }}</p>
+    </div>
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="num">Cant.</th>
+                <th class="num">Precio Unitario</th>
+                <th class="num">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in detalles %}
+            <tr>
+                <td>{{ item.producto.nombre }}</td>
+                <td class="num">{{ item.cantidad }}</td>
+                <td class="num">${{ item.precio_unitario }}</td>
+                <td class="num">${{ item.subtotal }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">Esta venta no tiene productos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <span class="total-pill">TOTAL PAGADO: ${{ venta.total }} MXN</span>
+    </div>
+
+    <div class="footer">
+        Dandelion Star — Documento generado automáticamente por el Sistema ERP.
+    </div>
+</body>
+</html>
