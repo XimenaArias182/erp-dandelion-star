@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style id="ds-cli-form-style">
+    .ds-form-shell {
+        max-width: 760px;
+        margin: 28px auto 56px;
+        padding: 32px 36px;
+        background: #FFFFFF;
+        border: 1px solid #EAEAEA;
+        color: #111111;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .ds-form-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #EAEAEA;
+    }
+    .ds-form-title {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 400;
+        letter-spacing: 0.03em;
+        color: #111111;
+    }
+    .ds-form-back {
+        font-size: 0.82rem;
+        color: #555555 !important;
+        text-decoration: none !important;
+    }
+    .ds-form-alert {
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        color: #991B1B;
+        font-size: 0.84rem;
+        border-radius: 2px;
+    }
+    .ds-form-group {
+        margin-bottom: 18px;
+    }
+    .ds-form-group label {
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #333333;
+        margin-bottom: 6px;
+    }
+    .ds-form-group input[type="text"],
+    .ds-form-group input[type="email"],
+    .ds-form-group input[type="number"],
+    .ds-form-group input[type="tel"],
+    .ds-form-group select,
+    .ds-form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #D8D8D8;
+        background: #FAFAFA;
+        color: #111111;
+        font-size: 0.9rem;
+        border-radius: 2px;
+        box-sizing: border-box;
+    }
+    .ds-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid #EAEAEA;
+    }
+    .ds-btn-save {
+        padding: 10px 24px;
+        border: 1px solid #111111;
+        background: #111111;
+        color: #FFFFFF;
+        font-size: 0.84rem;
+        font-weight: 500;
+        cursor: pointer;
+        border-radius: 2px;
+    }
+    .ds-btn-cancel {
+        padding: 10px 20px;
+        border: 1px solid #D4D4D4;
+        background: #FFFFFF;
+        color: #333333 !important;
+        font-size: 0.84rem;
+        text-decoration: none !important;
+        border-radius: 2px;
+    }
+</style>
+
+<div class="ds-form-shell">
+    <div class="ds-form-head">
+        <h1 class="ds-form-title">{% if cliente and cliente.pk %}Editar {{ cliente.nombre|default:cliente }}{% else %}Nuevo Cliente{% endif %}</h1>
+        <a href="{% url 'clientes:lista' %}" class="ds-form-back">&larr; Volver a Clientes</a>
+    </div>
+
+    {% if error_msg %}
+    <div class="ds-form-alert">{{ error_msg }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ request.path }}">
+        {% csrf_token %}
+        <div class="ds-form-group">
+    <label for="id_nombre">Nombre</label>
+    <input type="text" id="id_nombre" name="nombre" value="{{ cliente.nombre|default:"" }}" required>
+</div>
+        <div class="ds-form-group">
+    <label for="id_correo">Correo electrónico</label>
+    <input type="text" id="id_correo" name="correo" value="{{ cliente.correo|default:"" }}">
+</div>
+        <div class="ds-form-group">
+    <label for="id_telefono">Teléfono</label>
+    <input type="text" id="id_telefono" name="telefono" value="{{ cliente.telefono|default:"" }}">
+</div>
+        <div class="ds-form-group" style="display:flex;align-items:center;gap:10px;">
+    <input type="hidden" name="__bool_activo" value="1">
+    <input type="checkbox" id="id_activo" name="activo" {% if not cliente or cliente.activo %}checked{% endif %}>
+    <label for="id_activo" style="margin:0;">Activo</label>
+</div>
+        <div class="ds-form-actions">
+            <button type="submit" class="ds-btn-save">Guardar cambios</button>
+            <a href="{% url 'clientes:lista' %}" class="ds-btn-cancel">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

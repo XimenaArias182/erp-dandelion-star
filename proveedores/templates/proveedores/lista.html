@@ -1,55 +1,297 @@
-{% extends "base.html" %}
-{% block title %}Proveedores{% endblock %}
-{% block nav_proveedores %}active{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="erp-page-title">
-    <h2>🏭 Proveedores</h2>
-    {% if user.is_authenticated %}
-        <a href="{% url 'proveedores:crear' %}"
-           class="btn-erp-gold ms-auto">+ Nuevo</a>
-    {% endif %}
+<style id="ds-prov-editorial-list-style">
+    .ds-plist-shell {
+        max-width: 1460px;
+        margin: 0 auto;
+        padding: 22px 28px 52px;
+        background: #FFFFFF;
+        color: #111111;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .ds-plist-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #EAEAEA;
+    }
+    .ds-plist-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        color: #111111;
+    }
+    .ds-plist-new-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border: 1px solid #111111;
+        background: #111111;
+        color: #FFFFFF !important;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-decoration: none !important;
+        border-radius: 2px;
+        transition: all 0.2s ease;
+    }
+    .ds-plist-new-btn:hover {
+        background: #FFFFFF;
+        color: #111111 !important;
+    }
+    .ds-plist-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 13px 0;
+        border-bottom: 1px solid #EAEAEA;
+        font-size: 0.82rem;
+    }
+    .ds-plist-search {
+        border: none;
+        border-bottom: 1px solid #DCDCDC;
+        padding: 4px 6px;
+        font-size: 0.82rem;
+        color: #111111;
+        width: 260px;
+        background: transparent;
+    }
+    .ds-plist-search:focus {
+        outline: none;
+        border-bottom-color: #111111;
+    }
+    .ds-plist-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #FFFFFF;
+    }
+    .ds-plist-table thead th {
+        padding: 13px 14px;
+        text-align: left;
+        font-size: 0.73rem;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #555555;
+        background: #F6F6F6;
+        border-bottom: 1px solid #E6E6E6;
+    }
+    .ds-plist-table tbody tr {
+        border-bottom: 1px solid #EFEFEF;
+        transition: background-color 0.18s ease;
+    }
+    .ds-plist-table tbody tr:hover {
+        background: #FAFAFA;
+    }
+    .ds-plist-table tbody td {
+        padding: 14px;
+        vertical-align: middle;
+        font-size: 0.86rem;
+        color: #222222;
+    }
+    .ds-logo-upload-label {
+        position: relative;
+        width: 66px;
+        height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F6F6F6;
+        border: 1px dashed #CCCCCC;
+        border-radius: 2px;
+        overflow: hidden;
+        padding: 6px;
+        cursor: pointer;
+        margin: 0;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .ds-logo-upload-label.has-logo {
+        border-style: solid;
+        border-color: #E2E2E2;
+    }
+    .ds-logo-upload-label:hover {
+        border-color: #111111;
+        background: #EFEFEF;
+    }
+    .ds-prov-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+    }
+    .ds-prov-logo-fallback {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.05rem;
+        color: #142638;
+        letter-spacing: 0.05em;
+    }
+    .ds-logo-hover-badge {
+        position: absolute;
+        inset: 0;
+        background: rgba(17, 17, 17, 0.74);
+        color: #FFFFFF;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.18s ease;
+        padding: 4px;
+    }
+    .ds-logo-upload-label:hover .ds-logo-hover-badge {
+        opacity: 1;
+    }
+    .ds-prov-brand-link {
+        font-weight: 600;
+        font-size: 0.94rem;
+        color: #111111 !important;
+        text-decoration: none !important;
+    }
+    .ds-prov-brand-link:hover {
+        text-decoration: underline !important;
+    }
+    .ds-prov-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ds-act-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        font-size: 0.77rem;
+        border: 1px solid #D6D6D6;
+        background: #FFFFFF;
+        color: #222222 !important;
+        text-decoration: none !important;
+        border-radius: 2px;
+        cursor: pointer;
+        margin: 0;
+        transition: all 0.18s ease;
+    }
+    .ds-act-btn:hover {
+        border-color: #111111;
+        background: #111111;
+        color: #FFFFFF !important;
+    }
+    .ds-act-del:hover {
+        border-color: #B91C1C;
+        background: #B91C1C;
+        color: #FFFFFF !important;
+    }
+</style>
+
+<div class="ds-plist-shell">
+    <div class="ds-plist-head">
+        <h1 class="ds-plist-title">Proveedores</h1>
+        <a href="{% url 'proveedores:crear' %}" class="ds-plist-new-btn">+ Nuevo proveedor</a>
+    </div>
+
+    <div class="ds-plist-bar">
+        <input type="search" id="dsProvSearch" class="ds-plist-search" placeholder="Buscar marca, contacto o correo...">
+        <span style="color: #555555;"><strong id="dsProvCount">{{ proveedores|length }}</strong> Proveedores</span>
+    </div>
+
+    <table class="ds-plist-table" id="dsProvTable">
+        <thead>
+            <tr>
+                <th style="width: 92px;">Logo</th>
+                <th>Marca / Proveedor</th>
+                <th>Persona de contacto</th>
+<th>Correo electrónico</th>
+<th>Teléfono</th>
+
+                <th style="text-align: right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proveedor in proveedores %}
+            <tr class="ds-prov-row">
+                <td>
+                    <form method="post" action="{% url 'proveedores:subir_logo_proveedor' proveedor.id %}" enctype="multipart/form-data" style="margin: 0;">
+                        {% csrf_token %}
+                        <label class="ds-logo-upload-label {% if proveedor.logo %}has-logo{% endif %}" title="Haz clic para subir o cambiar el logo de {{ proveedor.nombre }}">
+                            {% if proveedor.logo %}
+                                <img src="{{ proveedor.logo.url }}" alt="{{ proveedor.nombre }}" class="ds-prov-logo-img">
+                            {% else %}
+                                <div class="ds-prov-logo-fallback">
+                                    <span>{{ proveedor.nombre|slice:":2"|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <span class="ds-logo-hover-badge">Subir logo</span>
+                            <input type="file" name="logo" accept="image/*" style="display: none;" onchange="this.form.submit();">
+                        </label>
+                    </form>
+                </td>
+                <td>
+                    <a href="{% url 'proveedores:detalle' proveedor.id %}" class="ds-prov-brand-link">{{ proveedor.nombre }}</a>
+                </td>
+                <td>{{ proveedor.contacto|default:"—" }}</td>
+<td>{{ proveedor.correo|default:"—" }}</td>
+<td>{{ proveedor.telefono|default:"—" }}</td>
+
+                <td style="text-align: right;">
+                    <div class="ds-prov-actions">
+                        <form method="post" action="{% url 'proveedores:subir_logo_proveedor' proveedor.id %}" enctype="multipart/form-data" style="margin: 0;">
+                            {% csrf_token %}
+                            <label class="ds-act-btn" title="Subir foto del logo">
+                                <span>Subir logo</span>
+                                <input type="file" name="logo" accept="image/*" style="display: none;" onchange="this.form.submit();">
+                            </label>
+                        </form>
+                        <a href="{% url 'proveedores:editar' proveedor.id %}" class="ds-act-btn">Editar</a>
+                        <form method="post" action="{% url 'proveedores:eliminar' proveedor.id %}" style="margin: 0;" onsubmit="return confirm('¿Eliminar este proveedor?');">
+                            {% csrf_token %}
+                            <button type="submit" class="ds-act-btn ds-act-del">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px 16px; color: #666666;">
+                    Aún no hay proveedores registrados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-{% if proveedores %}
-<table class="erp-table">
-    <thead>
-        <tr>
-            <th>#</th><th>Nombre</th><th>Contacto</th>
-            <th>Correo</th><th>Estado</th>
-            {% if user.is_authenticated %}<th>Acciones</th>{% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in proveedores %}
-        <tr>
-            <td><code>{{ p.pk }}</code></td>
-            <td>
-                <a href="{% url 'proveedores:detalle' p.pk %}"
-                   style="color:var(--clr-royal);font-weight:600;">
-                    {{ p.nombre }}
-                </a>
-            </td>
-            <td>{{ p.contacto|default:"—" }}</td>
-            <td>{{ p.correo }}</td>
-            <td>
-                {% if p.activo %}
-                    <span class="badge-erp-active">Activo</span>
-                {% else %}
-                    <span class="badge-erp-inactive">Inactivo</span>
-                {% endif %}
-            </td>
-            {% if user.is_authenticated %}
-            <td>
-                <a href="{% url 'proveedores:editar' p.pk %}"
-                   class="btn-erp-primary btn-erp-sm">Editar</a>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="erp-alert-info">No hay proveedores registrados aún.</div>
-{% endif %}
+<script>
+(function () {
+    var input = document.getElementById('dsProvSearch');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.ds-prov-row'));
+    var countEl = document.getElementById('dsProvCount');
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        var q = (input.value || '').toLowerCase().trim();
+        var visible = 0;
+        rows.forEach(function (row) {
+            var match = !q || (row.textContent || '').toLowerCase().indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        if (countEl) countEl.textContent = visible;
+    });
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,99 @@
+/* Tipografía caligráfica oro puro unificada (mismo diseño exacto que el título junto al logo) */
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;500;600&family=Pinyon+Script&display=swap');
+
+:root {
+    --ds-calligraphy-font: 'Great Vibes', 'Pinyon Script', 'Edwardian Script ITC', 'Snell Roundhand', cursive;
+    --ds-logo-gold: #F6D879;
+    --ds-light-bg-gold: #9A7014;
+}
+
+h1, h2, h3, h4, .h1, .h2, .h3, .h4,
+.navbar-brand, .brand-link, .brand-text, .brand-title,
+.hero-title, .page-title, .section-title, .module-title,
+.card-title, .content-header h1, .login-logo a, .login-box-msg,
+.ds-plist-title, .ds-clist-title, .ds-form-title,
+.footer-brand, .ds-calligraphy-title,
+[class*="theme"] h1, [class*="theme"] h2, [class*="theme"] h3,
+[data-theme] h1, [data-theme] h2, [data-theme] h3 {
+    font-family: var(--ds-calligraphy-font) !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: 0.015em !important;
+    text-transform: none !important;
+    line-height: 1.24 !important;
+    opacity: 1 !important;
+    padding-left: 0.14em;
+    padding-right: 0.18em;
+    overflow: visible !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: geometricPrecision !important;
+    font-synthesis: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    background: none !important;
+    filter: none !important;
+}
+
+/* Mismo tono oro puro luminoso del logotipo en el título central, barra superior, pie y temas oscuros */
+.ds-gold-metallic-text,
+.ds-gold-metallic-text *,
+.navbar-brand, .navbar-brand *,
+.brand-link, .brand-link *,
+.brand-title, .brand-title *,
+.hero-title, .hero-title *,
+.hero h1, .hero h1 *,
+.banner h1, .banner h1 *,
+.jumbotron h1, .jumbotron h1 *,
+.footer-brand, .footer-brand *,
+body[class*="dark"] h1,
+body[class*="dark"] h2,
+body[class*="dark"] h3,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+    color: var(--ds-logo-gold) !important;
+    -webkit-text-fill-color: var(--ds-logo-gold) !important;
+    opacity: 1 !important;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    filter: none !important;
+    text-shadow:
+        0 1px 0 rgba(255, 248, 214, 0.38),
+        0 2px 5px rgba(5, 14, 28, 0.52) !important;
+}
+
+/* Oro bruñido legible únicamente dentro de tarjetas blancas/claras */
+.ds-gold-editorial-text,
+.ds-gold-editorial-text * {
+    color: var(--ds-light-bg-gold) !important;
+    -webkit-text-fill-color: var(--ds-light-bg-gold) !important;
+    opacity: 1 !important;
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    filter: none !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+h1, .h1, .hero-title, .content-header h1, .ds-plist-title, .ds-clist-title, .ds-form-title {
+    font-size: clamp(2.15rem, 3.5vw, 3.85rem) !important;
+}
+h2, .h2, .section-title, .module-title {
+    font-size: clamp(1.7rem, 2.4vw, 2.4rem) !important;
+}
+h3, .h3, .card-title, .navbar-brand, .brand-text {
+    font-size: clamp(1.45rem, 1.95vw, 1.9rem) !important;
+}
+
+svg text.ds-calligraphy-svg,
+svg text.ds-calligraphy-svg tspan {
+    font-family: var(--ds-calligraphy-font) !important;
+    font-weight: 400 !important;
+    stroke: none !important;
+    stroke-width: 0 !important;
+    filter: none !important;
+    text-rendering: geometricPrecision !important;
+    shape-rendering: geometricPrecision !important;
+}

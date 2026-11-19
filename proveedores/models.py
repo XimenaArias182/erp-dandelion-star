@@ -4,6 +4,7 @@ from django.db import models
 
 
 class Proveedor(models.Model):
+    logo = models.ImageField(upload_to='proveedores/', null=True, blank=True, verbose_name='Logo de la marca')
     """Representa a un proveedor de mercancía.
 
     Atributos:

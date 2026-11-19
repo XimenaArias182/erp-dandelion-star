@@ -1,76 +1,211 @@
-{% extends "base.html" %}
-{% block title %}Clientes{% endblock %}
-{% block nav_clientes %}active{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="erp-page-title">
-    <h2>👥 Clientes</h2>
-    <span style="margin-left:auto;color:var(--clr-muted);font-size:.85rem;">
-        {{ page_obj.paginator.count }} cliente(s)
-    </span>
-    {% if user.is_authenticated %}
-        <a href="{% url 'clientes:crear' %}" class="btn-erp-gold">+ Nuevo</a>
-    {% endif %}
+<style id="ds-cli-editorial-list-style">
+    .ds-clist-shell {
+        max-width: 1460px;
+        margin: 0 auto;
+        padding: 22px 28px 52px;
+        background: #FFFFFF;
+        color: #111111;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .ds-clist-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #EAEAEA;
+    }
+    .ds-clist-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        color: #111111;
+    }
+    .ds-clist-new-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border: 1px solid #111111;
+        background: #111111;
+        color: #FFFFFF !important;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-decoration: none !important;
+        border-radius: 2px;
+        transition: all 0.2s ease;
+    }
+    .ds-clist-new-btn:hover {
+        background: #FFFFFF;
+        color: #111111 !important;
+    }
+    .ds-clist-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 13px 0;
+        border-bottom: 1px solid #EAEAEA;
+        font-size: 0.82rem;
+    }
+    .ds-clist-search {
+        border: none;
+        border-bottom: 1px solid #DCDCDC;
+        padding: 4px 6px;
+        font-size: 0.82rem;
+        color: #111111;
+        width: 260px;
+        background: transparent;
+    }
+    .ds-clist-search:focus {
+        outline: none;
+        border-bottom-color: #111111;
+    }
+    .ds-clist-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #FFFFFF;
+    }
+    .ds-clist-table thead th {
+        padding: 13px 14px;
+        text-align: left;
+        font-size: 0.73rem;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: #555555;
+        background: #F6F6F6;
+        border-bottom: 1px solid #E6E6E6;
+    }
+    .ds-clist-table tbody tr {
+        border-bottom: 1px solid #EFEFEF;
+        transition: background-color 0.18s ease;
+    }
+    .ds-clist-table tbody tr:hover {
+        background: #FAFAFA;
+    }
+    .ds-clist-table tbody td {
+        padding: 14px;
+        vertical-align: middle;
+        font-size: 0.86rem;
+        color: #222222;
+    }
+    .ds-cli-name-link {
+        font-weight: 600;
+        font-size: 0.94rem;
+        color: #111111 !important;
+        text-decoration: none !important;
+    }
+    .ds-cli-name-link:hover {
+        text-decoration: underline !important;
+    }
+    .ds-cli-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ds-act-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        font-size: 0.77rem;
+        border: 1px solid #D6D6D6;
+        background: #FFFFFF;
+        color: #222222 !important;
+        text-decoration: none !important;
+        border-radius: 2px;
+        cursor: pointer;
+        margin: 0;
+        transition: all 0.18s ease;
+    }
+    .ds-act-btn:hover {
+        border-color: #111111;
+        background: #111111;
+        color: #FFFFFF !important;
+    }
+    .ds-act-del:hover {
+        border-color: #B91C1C;
+        background: #B91C1C;
+        color: #FFFFFF !important;
+    }
+</style>
+
+<div class="ds-clist-shell">
+    <div class="ds-clist-head">
+        <h1 class="ds-clist-title">Clientes</h1>
+        <a href="{% url 'clientes:crear' %}" class="ds-clist-new-btn">+ Nuevo cliente</a>
+    </div>
+
+    <div class="ds-clist-bar">
+        <input type="search" id="dsCliSearch" class="ds-clist-search" placeholder="Buscar cliente, correo o teléfono...">
+        <span style="color: #555555;"><strong id="dsCliCount">{{ clientes|length }}</strong> Clientes</span>
+    </div>
+
+    <table class="ds-clist-table" id="dsCliTable">
+        <thead>
+            <tr>
+                <th>Nombre del cliente</th>
+                <th>Correo electrónico</th>
+<th>Teléfono</th>
+<th>Estado</th>
+
+                <th style="text-align: right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr class="ds-cli-row">
+                <td>
+                    <a href="{% url 'clientes:editar' cliente.id %}" class="ds-cli-name-link">{{ cliente.nombre|default:cliente }}</a>
+                </td>
+                <td>{{ cliente.correo|default:"—" }}</td>
+<td>{{ cliente.telefono|default:"—" }}</td>
+<td>{% if cliente.activo %}<span style="color:#166534;font-weight:500;">&#9679; Activo</span>{% else %}<span style="color:#666666;">&#9679; Inactivo</span>{% endif %}</td>
+
+                <td style="text-align: right;">
+                    <div class="ds-cli-actions">
+                        <a href="{% url 'clientes:editar' cliente.id %}" class="ds-act-btn">Editar</a>
+                        <form method="post" action="{% url 'clientes:eliminar' cliente.id %}" style="margin: 0;" onsubmit="return confirm('¿Eliminar este cliente?');">
+                            {% csrf_token %}
+                            <button type="submit" class="ds-act-btn ds-act-del">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 48px 16px; color: #666666;">
+                    Aún no hay clientes registrados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-{% if clientes %}
-<table class="erp-table">
-    <thead>
-        <tr>
-            <th>#</th><th>Nombre</th><th>Correo</th>
-            <th>Teléfono</th><th>Estado</th>
-            {% if user.is_authenticated %}<th>Acciones</th>{% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for c in clientes %}
-        <tr>
-            <td><code>{{ c.pk }}</code></td>
-            <td>
-                <a href="{% url 'clientes:detalle' c.pk %}"
-                   style="color:var(--clr-royal);font-weight:600;">
-                    {{ c.nombre }}
-                </a>
-            </td>
-            <td>{{ c.correo }}</td>
-            <td>{{ c.telefono|default:"—" }}</td>
-            <td>
-                {% if c.activo %}
-                    <span class="badge-erp-active">Activo</span>
-                {% else %}
-                    <span class="badge-erp-inactive">Inactivo</span>
-                {% endif %}
-            </td>
-            {% if user.is_authenticated %}
-            <td>
-                <a href="{% url 'clientes:editar' c.pk %}"
-                   class="btn-erp-primary btn-erp-sm">Editar</a>
-                <a href="{% url 'clientes:eliminar' c.pk %}"
-                   class="btn-erp-danger btn-erp-sm">Eliminar</a>
-            </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<script>
+(function () {
+    var input = document.getElementById('dsCliSearch');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.ds-cli-row'));
+    var countEl = document.getElementById('dsCliCount');
+    if (!input) return;
 
-{% if is_paginated %}
-<div style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;">
-    {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}"
-           class="btn-erp-primary btn-erp-sm">← Anterior</a>
-    {% endif %}
-    <span style="padding:.35rem .75rem;color:var(--clr-muted);font-size:.88rem;">
-        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-    </span>
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}"
-           class="btn-erp-primary btn-erp-sm">Siguiente →</a>
-    {% endif %}
-</div>
-{% endif %}
-
-{% else %}
-<div class="erp-alert-info">No hay clientes registrados aún.</div>
-{% endif %}
+    input.addEventListener('input', function () {
+        var q = (input.value || '').toLowerCase().trim();
+        var visible = 0;
+        rows.forEach(function (row) {
+            var match = !q || (row.textContent || '').toLowerCase().indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        if (countEl) countEl.textContent = visible;
+    });
+})();
+</script>
 {% endblock %}

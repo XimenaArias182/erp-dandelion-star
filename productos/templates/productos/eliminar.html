@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Dandelion Star{% endblock %}
+{% block nav_productos %}active{% endblock %}
+
+{% block content %}
+<div class="erp-page-title">
+    <h2>🗑️ Eliminar producto</h2>
+</div>
+
+<div class="erp-card" style="max-width:540px;">
+    <div class="erp-alert-danger" style="margin-bottom:1.5rem;">
+        <strong>¿Eliminar "{{ producto.nombre }}"?</strong>
+        <p style="margin:.5rem 0 0;">Esta acción no se puede deshacer.</p>
+        <p style="margin:.25rem 0 0;font-size:.88rem;
+                  color:var(--clr-muted);">
+            Nota: si el producto tiene ventas asociadas,
+            no podrá eliminarse (restricción PROTECT).
+        </p>
+    </div>
+    <!-- SIEMPRE formulario POST para borrar — nunca GET -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+    <div class="mb-3">
+        <label class="erp-label">Imagen del producto</label>
+        {{ form.imagen }}
+        {% if form.instance.imagen %}
+            <div class="mt-2"><img src="{{ form.instance.imagen.url }}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:2px solid var(--clr-amber);"></div>
+        {% endif %}
+    </div>
+            <button type="submit" class="btn-erp-danger">
+                Sí, eliminar
+            </button>
+            <a href="{% url 'productos:detalle' producto.pk %}"
+               class="btn-erp-primary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

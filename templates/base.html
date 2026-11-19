@@ -1,10 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0A2342">
-    <title>{% block title %}ERP Django{% endblock %} · UTEC Celaya</title>
+    <title>Dandelion Star</title>
+    <link rel="icon" href="{% static 'img/logo.png' %}">
 
     <!-- Google Fonts: Playfair Display + Inter + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,44 +20,116 @@
 
     <!-- Fable 5 AzulERP — Design System -->
     <style>
+
+
+        /* LOGO MEDALLÓN CON ARO DORADO */
+.erp-medallion {
+    display: inline-block;
+    padding: 3px;
+    border-radius: 50%;
+    background: conic-gradient(from 210deg,
+        #F6E27A, #D4AF37, #8A6A12, #D4AF37, #FFF3B0,
+        #D4AF37, #8A6A12, #D4AF37, #F6E27A);
+    box-shadow: 0 0 14px rgba(212,175,55,.55), 0 4px 10px rgba(0,0,0,.5);
+    cursor: zoom-in;
+    transition: transform .25s ease, box-shadow .25s ease;
+    line-height: 0;
+    -webkit-text-fill-color: initial;
+}
+.erp-medallion:hover {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 0 22px rgba(246,226,122,.95), 0 6px 14px rgba(0,0,0,.6);
+}
+.erp-medallion img {
+    width: 100%; height: 100%;
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(10,35,66,.85);
+    background: #15181d;
+}
+
+/* VISOR AMPLIADO AL HACER CLIC */
+.logo-lightbox-backdrop {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(6,14,28,.88);
+    backdrop-filter: blur(5px);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 1.1rem;
+    padding: 1.5rem; cursor: zoom-out;
+}
+.logo-lightbox-backdrop.open { display: flex; animation: fadeInLogo .25s ease; }
+.logo-lightbox-ring {
+    width: min(80vw, 420px); aspect-ratio: 1 / 1;
+    padding: 9px; border-radius: 50%;
+    background: conic-gradient(from 210deg,
+        #F6E27A, #D4AF37, #8A6A12, #D4AF37, #FFF3B0,
+        #D4AF37, #8A6A12, #D4AF37, #F6E27A);
+    box-shadow: 0 0 45px rgba(212,175,55,.65), 0 14px 40px rgba(0,0,0,.75);
+}
+.logo-lightbox-ring img {
+    width: 100%; height: 100%; display: block;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(10,35,66,.9);
+    background: #15181d;
+}
+.logo-lightbox-name {
+    font-family: 'Playfair Display',Georgia,serif;
+    font-size: 1.5rem; letter-spacing: .22em;
+    background: linear-gradient(90deg,#F6E27A,#D4AF37,#B8860B,#F6E27A);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+@keyframes fadeInLogo {
+    from { opacity: 0; transform: scale(.92); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
         /* TOKENS MODO DÍA */
         :root, [data-theme="light"] {
             --clr-navy   : #0A2342;
             --clr-royal  : #1B4F8A;
             --clr-sky    : #4A90D9;
-            --clr-ice    : #E8F0FB;
-            --clr-gold   : #B8860B;
+            --clr-ice    : #ffffff;
+            --clr-gold   : #ffffff;
             --clr-amber  : #D4A017;
-            --clr-cream  : #FDF8E8;
-            --clr-bg     : #F5F7FA;
-            --clr-surface: #FFFFFF;
-            --clr-text   : #1A1A2E;
-            --clr-muted  : #5A6A7E;
-            --clr-border : #C8D8EC;
-            --clr-danger : #C0392B;
+            --clr-cream  : #506a88;
+            --clr-bg     : #ffffff;
+            --clr-surface: #97a9b4;
+            --clr-text   : #000000;
+            --clr-muted  : #000000;
+            --clr-border : #49586b;
+            --clr-danger : #253047;
             --clr-ok     : #1A7A4A;
             --shadow-sm  : 0 1px 4px rgba(10,35,66,.08);
             --shadow-md  : 0 4px 16px rgba(10,35,66,.12);
         }
         /* TOKENS MODO NOCHE */
         [data-theme="dark"] {
-            --clr-navy   : #1E3A5F;
-            --clr-royal  : #2E5F9E;
-            --clr-sky    : #6BAEE8;
+            --clr-navy   : #0e458d;
+            --clr-royal  : #4d6079;
+            --clr-sky    : #000000;
             --clr-ice    : #1A2A3A;
             --clr-gold   : #D4AF37;
             --clr-amber  : #E8C547;
             --clr-cream  : #2A2510;
             --clr-bg     : #0D1B2A;
             --clr-surface: #142033;
-            --clr-text   : #E2EAF4;
+            --clr-text   : #000000;
             --clr-muted  : #8AA0B8;
             --clr-border : #2A3F58;
-            --clr-danger : #E74C3C;
+            --clr-danger : #e65141;
             --clr-ok     : #2ECC71;
             --shadow-sm  : 0 1px 4px rgba(0,0,0,.3);
             --shadow-md  : 0 4px 16px rgba(0,0,0,.4);
+
+        /* En :root, [data-theme="light"] */
+    --clr-gold   : #D4AF37;
+    --clr-amber  : #E8C547;
+
         }
+        
         /* BASE */
         *, *::before, *::after { box-sizing: border-box; }
         body {
@@ -76,13 +150,69 @@
             justify-content: space-between; flex-wrap: wrap; gap: .5rem;
             box-shadow: var(--shadow-md);
         }
+        /* En .erp-brand */
         .erp-brand {
-            font-family: 'Playfair Display',Georgia,serif;
-            font-size: 1.3rem; font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: var(--clr-gold) !important;
-            text-decoration: none; letter-spacing: .04em;
+            text-decoration: none;
+            letter-spacing: .08em;
+            display: inline-flex;
+            align-items: center;
+            gap: .75rem;
+            background: linear-gradient(90deg, #F6E27A, #D4AF37 45%, #B8860B 70%, #F6E27A);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .erp-brand span { color: rgba(255,255,255,.7); font-weight: 300; font-size: .85em; }
+
+        /* LOGO MEDALLÓN REDONDEADO Y LLAMATIVO */
+        .erp-logo-medallion {
+            border-radius: 50%;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+            border: 2px solid var(--clr-amber);
+            box-shadow: 0 0 12px rgba(212, 160, 23, 0.55), 0 4px 10px rgba(0, 0, 0, 0.45);
+            cursor: zoom-in;
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+        .erp-logo-medallion:hover {
+            transform: scale(1.1);
+            border-color: #FFF;
+            box-shadow: 0 0 18px rgba(232, 197, 71, 0.9), 0 6px 14px rgba(0, 0, 0, 0.6);
+        }
+        /* VISOR AMPLIADO AL HACER CLIC */
+        .logo-lightbox-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(10, 20, 38, 0.86);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            cursor: zoom-out;
+        }
+        .logo-lightbox-backdrop.open {
+            display: flex;
+            animation: fadeInLogo .2s ease;
+        }
+        .logo-lightbox-img {
+            max-width: min(88vw, 440px);
+            max-height: 82vh;
+            border-radius: 50%;
+            border: 4px solid var(--clr-amber);
+            box-shadow: 0 0 35px rgba(212, 160, 23, 0.65), 0 12px 35px rgba(0, 0, 0, 0.7);
+            object-fit: cover;
+        }
+        @keyframes fadeInLogo {
+            from { opacity: 0; transform: scale(0.92); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
         .erp-nav-links { display: flex; align-items: center; gap: .25rem; flex-wrap: wrap; }
         .erp-nav-link {
             color: rgba(255,255,255,.82) !important;
@@ -245,23 +375,181 @@
         }
     </style>
     {% block extra_css %}{% endblock %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Pinyon+Script&display=swap" rel="stylesheet">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&display=swap" rel="stylesheet">
+
+
+
+
+
+<style id="ds-palacio-script-style">
+    html, body {
+        min-height: 100vh !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    nav, header, .navbar, .navbar-brand, .erp-brand, .erp-topbar {
+        overflow: visible !important;
+        flex-shrink: 0 !important;
+    }
+    main, .erp-main, .content-wrapper {
+        flex: 1 0 auto !important;
+    }
+    .ds-palacio-nav,
+    .ds-palacio-nav * {
+        font-family: 'Great Vibes', 'Pinyon Script', !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        font-size: 2.55rem !important;
+        line-height: 1.42 !important;
+        padding-top: 0.28rem !important;
+        padding-bottom: 0.1rem !important;
+        padding-left: 0.15rem !important;
+        padding-right: 0.25rem !important;
+        letter-spacing: 0.02em !important;
+        text-transform: none !important;
+        color: #E2BE53 !important;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        overflow: visible !important;
+    }
+    footer,
+    footer *,
+    .ds-palacio-footer,
+    .ds-palacio-footer * {
+        font-family: 'Great Vibes', 'Pinyon Script', !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        font-size: 1.7rem !important;
+        line-height: 1.15 !important;
+        letter-spacing: 0.03em !important;
+        text-transform: none !important;
+        color: #E2BE53 !important;
+    }
+    footer {
+        flex-shrink: 0 !important;
+        margin-top: auto !important;
+        padding: 0.35rem 1rem !important;
+        text-align: center !important;
+    }
+</style>
+
+
+<style id="ds-hero-title-restore">
+    h1.ds-palacio-hero,
+    .ds-palacio-hero,
+    .ds-palacio-hero * {
+        font-family: 'Great Vibes', 'Pinyon Script', !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        font-size: clamp(4.8rem, 7.2vw, 6.5rem) !important;
+        line-height: 1.24 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        text-align: center !important;
+        margin: 0 auto 0.25rem !important;
+        padding: 0.25rem 0.75rem 0.1rem !important;
+        letter-spacing: 0.02em !important;
+        text-transform: none !important;
+        color: #D4AF37 !important;
+        -webkit-text-stroke: 0px transparent !important;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+        filter: none !important;
+        display: block !important;
+        overflow: visible !important;
+    }
+    @media (max-width: 768px) {
+        h1.ds-palacio-hero,
+        .ds-palacio-hero,
+        .ds-palacio-hero * {
+            font-size: 3.9rem !important;
+        }
+    }
+</style>
+
+
+
+<style id="ds-viewport-layout">
+    html, body {
+        min-height: 100vh !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: clip !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    nav, header, .navbar, .erp-topbar {
+        flex-shrink: 0 !important;
+    }
+    main, .erp-main, .content-wrapper {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-width: 100% !important;
+        overflow-x: clip !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0.25rem !important;
+    }
+    footer {
+        flex-shrink: 0 !important;
+        margin-top: auto !important;
+        padding-top: 0.45rem !important;
+        padding-bottom: 0.55rem !important;
+        line-height: 1.35 !important;
+        overflow: visible !important;
+    }
+</style>
+
+<style id="ds-drawer-fullheight-style">
+    /* Cubrir de extremo a extremo verticalmente (sobre barra superior y pie de página) */
+    .ds-menu-drawer-elevated {
+        position: fixed !important;
+        top: 0px !important;
+        bottom: 0px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        z-index: 99999 !important;
+    }
+    .ds-menu-backdrop-elevated {
+        position: fixed !important;
+        inset: 0px !important;
+        z-index: 99998 !important;
+    }
+</style>
+
+
+<link id="ds-global-google-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;500;600&family=Pinyon+Script&display=swap">
+<link id="ds-global-theme-font-css" rel="stylesheet" href="/static/css/ds_global_theme_font.css?v=oro4">
 </head>
 
 <body>
 
 <!-- NAVBAR -->
 <nav class="erp-navbar">
-    <a class="erp-brand" href="/">📦 ERP Django <span>· UTEC Celaya</span></a>
+    <a class="erp-brand" href="/">
+    <span class="erp-medallion" style="width:48px;height:48px;" title="Haz clic para ver el logo">
+        <img src="{% static 'img/logo.png' %}" alt="Logo Dandelion Star">
+    </span>
+    <span class="ds-palacio-nav">Dandelion Star</span>
+</a>
     <div class="erp-nav-links">
-        <a href="{% url 'productos:inicio' %}"
+        <a href="{% url 'productos:lista' %}"
            class="erp-nav-link {% block nav_productos %}{% endblock %}">Productos</a>
-        <a href="{% url 'clientes:inicio' %}"
+        <a href="{% url 'clientes:lista' %}"
            class="erp-nav-link {% block nav_clientes %}{% endblock %}">Clientes</a>
-        <a href="{% url 'proveedores:inicio' %}"
+        <a href="{% url 'proveedores:lista' %}"
            class="erp-nav-link {% block nav_proveedores %}{% endblock %}">Proveedores</a>
-        <a href="{% url 'ventas:inicio' %}"
+        <a href="{% url 'ventas:lista' %}"
            class="erp-nav-link {% block nav_ventas %}{% endblock %}">Ventas</a>
-        <a href="{% url 'reportes:inicio' %}"
+        <a href="{% url 'reportes:lista' %}"
            class="erp-nav-link {% block nav_reportes %}{% endblock %}">Reportes</a>
         <a href="/admin/" class="erp-nav-link">Admin</a>
         {% if user.is_authenticated %}
@@ -298,8 +586,13 @@
 
 <!-- FOOTER -->
 <footer class="erp-footer">
-    ERP Django · Django 4.2 LTS · Fable 5 AzulERP · UTEC Celaya · Espiral 1
+    Dandelion Star - Ximena Arias
 </footer>
+
+<!-- VISOR EMERGENTE DEL LOGO -->
+<div id="logoLightbox" class="logo-lightbox-backdrop" title="Haz clic para cerrar">
+    <img id="logoLightboxImg" src="{% static 'img/logo.png' %}" alt="Dandelion Star" class="logo-lightbox-img">
+</div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
@@ -325,6 +618,102 @@
     }
 })();
 </script>
+
+<!-- Script para ampliar el logo al hacer clic -->
+<script>
+(function () {
+    var lightbox = document.getElementById('logoLightbox');
+    var lightboxImg = document.getElementById('logoLightboxImg');
+    document.querySelectorAll('.erp-logo-medallion').forEach(function (img) {
+        img.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            lightboxImg.src = img.src;
+            lightbox.classList.add('open');
+        });
+    });
+    if (lightbox) {
+        lightbox.addEventListener('click', function () {
+            lightbox.classList.remove('open');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') lightbox.classList.remove('open');
+        });
+    }
+})();
+</script>
 {% block extra_js %}{% endblock %}
+
+<div id="logoLightbox" class="logo-lightbox-backdrop" title="Haz clic para cerrar">
+    <div class="logo-lightbox-ring">
+        <img id="logoLightboxImg" src="{% static 'img/logo.png' %}" alt="Dandelion Star">
+    </div>
+    <div class="ds-palacio-hero logo-lightbox-name">Dandelion Star</div>
+</div>
+
+<script>
+(function () {
+    var lightbox = document.getElementById('logoLightbox');
+    var lightboxImg = document.getElementById('logoLightboxImg');
+    document.querySelectorAll('.erp-medallion').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            lightboxImg.src = el.querySelector('img').src;
+            lightbox.classList.add('open');
+        });
+    });
+    if (lightbox) {
+        lightbox.addEventListener('click', function () {
+            lightbox.classList.remove('open');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') lightbox.classList.remove('open');
+        });
+    }
+})();
+</script>
+<script id="ds-drawer-fullheight-script">
+(function () {
+    function elevateMenuDrawerFullHeight() {
+        var all = document.querySelectorAll('div, aside, section, nav');
+        for (var i = 0; i < all.length; i++) {
+            var el = all[i];
+            var txt = el.textContent || '';
+            if (txt.indexOf('Inicio del Sistema') !== -1 && (txt.indexOf('Todo Productos') !== -1 || txt.indexOf('Proveedores') !== -1)) {
+                var cur = el;
+                while (cur && cur !== document.body) {
+                    var st = window.getComputedStyle(cur);
+                    if (st.position === 'fixed' || st.position === 'absolute') {
+                        cur.classList.add('ds-menu-drawer-elevated');
+                        cur.style.setProperty('top', '0px', 'important');
+                        cur.style.setProperty('bottom', '0px', 'important');
+                        cur.style.setProperty('height', '100vh', 'important');
+                        cur.style.setProperty('max-height', '100vh', 'important');
+                        cur.style.setProperty('z-index', '99999', 'important');
+                        var prev = cur.previousElementSibling;
+                        if (prev && window.getComputedStyle(prev).position === 'fixed') {
+                            prev.classList.add('ds-menu-backdrop-elevated');
+                        }
+                        break;
+                    }
+                    cur = cur.parentElement;
+                }
+            }
+        }
+    }
+
+    elevateMenuDrawerFullHeight();
+    document.addEventListener('click', function () {
+        elevateMenuDrawerFullHeight();
+        window.requestAnimationFrame(elevateMenuDrawerFullHeight);
+        setTimeout(elevateMenuDrawerFullHeight, 25);
+        setTimeout(elevateMenuDrawerFullHeight, 120);
+    }, true);
+    window.addEventListener('load', elevateMenuDrawerFullHeight);
+})();
+</script>
+<script id="ds-global-theme-font-js" src="/static/js/ds_global_theme_font.js?v=oro4"></script>
 </body>
 </html>
+
