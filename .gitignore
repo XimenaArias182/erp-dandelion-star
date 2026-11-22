@@ -1,0 +1,14 @@
+env_erp/
+venv/
+.env
+__pycache__/
+*.py[cod]
+db.sqlite3
+staticfiles/
+.vscode/
+.idea/
+*.log
+
+*.bak
+
+media/

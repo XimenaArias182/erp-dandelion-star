@@ -1,0 +1,63 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Pinyon+Script&display=swap" rel="stylesheet">
+
+{% extends "base.html" %}
+{% load static allauth %}
+{% block title %}Dandelion Star{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:center;
+            align-items:center;min-height:60vh;">
+    <div class="erp-card" style="width:100%;max-width:420px;">
+        <div class="erp-card-header" style="text-align:center;">
+            <img src="{% static 'img/logo.png' %}" alt="Logo"
+                 style="max-height:48px;display:block;margin:0 auto .5rem;">
+            <span class="erp-brand-luxury-script">🔐 Iniciar sesión · ERP Django</span>
+        </div>
+
+        <div class="ds-login-circle-logo" style="text-align:center;margin-bottom:16px;"><img src="/static/img/logo.png" alt="Dandelion Star" style="width:86px;height:86px;border-radius:50%;object-fit:contain;background:#FFFFFF;padding:5px;box-shadow:0 4px 14px rgba(0,0,0,0.12);"></div>
+<form method="post" action="{% url 'account_login' %}"
+              style="margin-top:.5rem;">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div class="mb-4">
+                <label class="erp-label">Usuario</label>
+                <input type="text" name="login"
+                       class="erp-input"
+                       placeholder="Tu nombre de usuario"
+                       autofocus required>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+                <label class="erp-label">Contraseña</label>
+                <input type="password" name="password"
+                       class="erp-input"
+                       placeholder="••••••••" required>
+            </div>
+
+            <!-- Errores del formulario -->
+            {% if form.errors %}
+            <div class="erp-alert-danger" style="margin-bottom:1rem;">
+                Usuario o contraseña incorrectos.
+            </div>
+            {% endif %}
+
+            <!-- Botón -->
+            <button type="submit" class="btn-erp-gold"
+                    style="width:100%;padding:.6rem;font-size:1rem;">
+                Entrar
+            </button>
+        </form>
+
+        <p style="text-align:center;margin-top:1rem;
+                  color:var(--clr-muted);font-size:.88rem;">
+            ¿No tienes cuenta?
+            <a href="{% url 'account_signup' %}"
+               style="color:var(--clr-sky);">Regístrate aquí</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

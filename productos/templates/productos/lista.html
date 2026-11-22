@@ -1,0 +1,817 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style id="ds-luxury-catalog-style">
+    .ds-cat-shell {
+        max-width: 1520px;
+        margin: 0 auto;
+        padding: 18px 26px 48px;
+        background: #FFFFFF;
+        color: #111111;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .ds-cat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #EAEAEA;
+    }
+    .ds-cat-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        color: #111111;
+    }
+    .ds-cat-new-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border: 1px solid #111111;
+        background: #111111;
+        color: #FFFFFF !important;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-decoration: none !important;
+        border-radius: 2px;
+        transition: all 0.2s ease;
+    }
+    .ds-cat-new-btn:hover {
+        background: #FFFFFF;
+        color: #111111 !important;
+    }
+
+    /* Barra editorial: Filtrar por | Contador centrado | Ordenar Por */
+    .ds-cat-toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid #EAEAEA;
+        font-size: 0.82rem;
+        color: #222222;
+    }
+    .ds-cat-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 18px;
+    }
+    .ds-filter-lead {
+        font-weight: 600;
+        color: #111111;
+        letter-spacing: 0.01em;
+    }
+    .ds-filter-select {
+        appearance: none;
+        -webkit-appearance: none;
+        border: none;
+        background: transparent;
+        padding: 4px 16px 4px 2px;
+        font-size: 0.82rem;
+        color: #333333;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23333' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 2px center;
+    }
+    .ds-filter-select:focus {
+        outline: none;
+        color: #000000;
+    }
+    .ds-filter-search {
+        border: none;
+        border-bottom: 1px solid #DCDCDC;
+        padding: 3px 6px;
+        font-size: 0.81rem;
+        color: #111111;
+        width: 145px;
+        background: transparent;
+        transition: border-color 0.2s ease, width 0.2s ease;
+    }
+    .ds-filter-search:focus {
+        outline: none;
+        border-bottom-color: #111111;
+        width: 185px;
+    }
+    .ds-cat-count {
+        text-align: center;
+        font-size: 0.82rem;
+        color: #222222;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .ds-cat-sort-wrap {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+    }
+    .ds-sort-select {
+        appearance: none;
+        -webkit-appearance: none;
+        border: none;
+        background: transparent;
+        padding: 4px 18px 4px 4px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #111111;
+        cursor: pointer;
+        text-align: right;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23111' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 2px center;
+    }
+    .ds-sort-select:focus {
+        outline: none;
+    }
+
+    /* Cuadrícula editorial de 4 columnas estilo boutique */
+    .ds-prod-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-left: 1px solid #ECECEC;
+    }
+    .ds-prod-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: #FFFFFF;
+        border-right: 1px solid #ECECEC;
+        border-bottom: 1px solid #ECECEC;
+        transition: background-color 0.25s ease;
+    }
+    .ds-prod-card:hover {
+        background: #FAFAFA;
+    }
+
+    .ds-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px 14px 8px;
+        min-height: 36px;
+        background: #F6F6F6;
+    }
+    .ds-card-season {
+        font-size: 0.72rem;
+        font-weight: 400;
+        color: #595959;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ds-card-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .ds-card-actions form {
+        display: inline-flex;
+        margin: 0;
+        padding: 0;
+    }
+    .ds-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border: none;
+        background: transparent;
+        color: #4A4A4A !important;
+        border-radius: 50%;
+        cursor: pointer;
+        text-decoration: none !important;
+        transition: background-color 0.18s ease, color 0.18s ease;
+    }
+    .ds-icon-btn:hover {
+        background: rgba(0, 0, 0, 0.06);
+        color: #000000 !important;
+    }
+    .ds-icon-del:hover {
+        background: rgba(185, 28, 28, 0.09);
+        color: #B91C1C !important;
+    }
+
+    /* Escenario de fotografía de estudio (#F6F6F6) */
+    .ds-prod-media {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        aspect-ratio: 4 / 4.2;
+        padding: 14px 22px 24px;
+        background: #F6F6F6;
+        overflow: hidden;
+        text-decoration: none !important;
+    }
+    .ds-card-img {
+        width: 100%;
+        height: 100%;
+        max-width: 260px;
+        max-height: 275px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .ds-prod-card:hover .ds-card-img {
+        transform: scale(1.045);
+    }
+    .ds-card-placeholder {
+        font-size: 0.78rem;
+        color: #9A9A9A;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    /* Pie de tarjeta: Nombre en negrita arriba, Precio y Stock abajo */
+    .ds-prod-meta {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 14px 16px 18px;
+        background: #FFFFFF;
+        flex: 1 1 auto;
+    }
+    .ds-prod-name {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #111111 !important;
+        text-decoration: none !important;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .ds-prod-name:hover {
+        text-decoration: underline !important;
+    }
+    .ds-prod-bottom-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 2px;
+    }
+    .ds-prod-price {
+        font-size: 0.83rem;
+        font-weight: 400;
+        color: #2B2B2B;
+        letter-spacing: 0.01em;
+    }
+    .ds-prod-stock-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.73rem;
+        color: #6B7280;
+    }
+    .ds-stock-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #2E6F5E;
+        display: inline-block;
+    }
+    .ds-stock-dot.is-low {
+        background: #C27D2C;
+    }
+    .ds-stock-dot.is-out {
+        background: #B91C1C;
+    }
+
+    .ds-cat-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 64px 20px;
+        color: #666666;
+        font-size: 0.92rem;
+    }
+
+    @media (max-width: 1180px) {
+        .ds-prod-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 860px) {
+        .ds-cat-toolbar {
+            grid-template-columns: 1fr;
+            text-align: left;
+        }
+        .ds-cat-count {
+            text-align: left;
+        }
+        .ds-cat-sort-wrap {
+            justify-content: flex-start;
+        }
+        .ds-prod-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 520px) {
+        .ds-prod-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="ds-cat-shell">
+    <div class="ds-cat-head">
+        <h1 class="ds-cat-title">Productos</h1>
+        <a href="{% url 'productos:crear' %}" class="ds-cat-new-btn">+ Nuevo producto</a>
+    </div>
+
+    <div class="ds-cat-toolbar">
+        <div class="ds-cat-filters">
+            <span class="ds-filter-lead">Filtrar por</span>
+            <select id="dsFilterCat" class="ds-filter-select" aria-label="Filtrar por categoría">
+                <option value="">Categoría</option>
+            </select>
+            <select id="dsFilterProv" class="ds-filter-select" aria-label="Filtrar por proveedor">
+                <option value="">Proveedor</option>
+            </select>
+            <select id="dsFilterStock" class="ds-filter-select" aria-label="Filtrar por disponibilidad">
+                <option value="">Disponibilidad</option>
+                <option value="in">En existencia</option>
+                <option value="low">Stock bajo (&le; 15)</option>
+                <option value="out">Agotado</option>
+            </select>
+            <input type="search" id="dsFilterQuery" class="ds-filter-search" placeholder="Buscar artículo..." aria-label="Buscar artículo">
+        </div>
+
+        <div class="ds-cat-count">
+            <span id="dsCatalogCount">{{ productos|length }}</span> Productos
+        </div>
+
+        <div class="ds-cat-sort-wrap">
+            <select id="dsSortSelect" class="ds-sort-select" aria-label="Ordenar por">
+                <option value="default">Ordenar Por</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="name-asc">Nombre: A - Z</option>
+                <option value="stock-desc">Mayor existencia</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="ds-prod-grid" id="dsProdGrid">
+        {% for p in productos %}
+        <article class="ds-prod-card"
+                 data-index="{{ forloop.counter }}"
+                 data-name="{{ p.nombre }}"
+                 data-cat="{{ p.categoria|default:'' }}"
+                 data-prov="{{ p.proveedor|default:'' }}"
+                 data-price="{{ p.precio }}"
+                 data-stock="{{ p.stock }}">
+            <div class="ds-card-top">
+                <span class="ds-card-season">{{ p.categoria|default:"Colección" }} &middot; {{ p.proveedor|default:"Dandelion Star" }}</span>
+                <div class="ds-card-actions">
+                    <a href="{% url 'productos:editar' p.pk %}" class="ds-icon-btn" title="Editar producto" aria-label="Editar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+    </a>
+                    <a href="{% url 'productos:eliminar' p.pk %}" class="ds-icon-btn ds-icon-del" title="Eliminar producto" aria-label="Eliminar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+    </a>
+                </div>
+            </div>
+
+            <a href="{% url 'productos:detalle' p.pk %}" class="ds-prod-media">
+                {% if p.imagen %}
+                    <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="ds-card-img" loading="lazy">
+                {% else %}
+                    <div class="ds-card-placeholder">Sin imagen</div>
+                {% endif %}
+            </a>
+
+            <div class="ds-prod-meta">
+                <a href="{% url 'productos:detalle' p.pk %}" class="ds-prod-name">{{ p.nombre }}</a>
+                <div class="ds-prod-bottom-row">
+                    <span class="ds-prod-price">${{ p.precio|floatformat:2 }}</span>
+                    <span class="ds-prod-stock-dots" title="Existencia disponible">
+                        <span class="ds-stock-dot"></span>
+                        <span>{{ p.stock }} piezas.</span>
+                    </span>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <div class="ds-cat-empty">
+            <p>Aún no hay productos registrados en el catálogo.</p>
+            <a href="{% url 'productos:crear' %}" class="ds-cat-new-btn">+ Agregar primer producto</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+(function () {
+    var grid = document.getElementById('dsProdGrid');
+    if (!grid) return;
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.ds-prod-card'));
+    var catSelect = document.getElementById('dsFilterCat');
+    var provSelect = document.getElementById('dsFilterProv');
+    var stockSelect = document.getElementById('dsFilterStock');
+    var queryInput = document.getElementById('dsFilterQuery');
+    var sortSelect = document.getElementById('dsSortSelect');
+    var countEl = document.getElementById('dsCatalogCount');
+
+    var cats = {};
+    var provs = {};
+
+    cards.forEach(function (card) {
+        var cat = (card.getAttribute('data-cat') || '').trim();
+        var prov = (card.getAttribute('data-prov') || '').trim();
+        var rawPrice = (card.getAttribute('data-price') || '0').replace(/[^0-9.,-]/g, '').replace(/,/g, '');
+        var rawStock = parseInt((card.getAttribute('data-stock') || '0').replace(/[^0-9-]/g, ''), 10) || 0;
+
+        card._numPrice = parseFloat(rawPrice) || 0;
+        card._numStock = rawStock;
+
+        var dot = card.querySelector('.ds-stock-dot');
+        if (dot) {
+            if (rawStock <= 0) dot.classList.add('is-out');
+            else if (rawStock <= 15) dot.classList.add('is-low');
+        }
+
+        if (cat && cat !== 'None') cats[cat] = true;
+        if (prov && prov !== 'None') provs[prov] = true;
+    });
+
+    Object.keys(cats).sort().forEach(function (c) {
+        var opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+    });
+
+    Object.keys(provs).sort().forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        provSelect.appendChild(opt);
+    });
+
+    function applyFilterAndSort() {
+        var selCat = catSelect.value;
+        var selProv = provSelect.value;
+        var selStock = stockSelect.value;
+        var q = (queryInput.value || '').toLowerCase().trim();
+        var sortMode = sortSelect.value;
+
+        var sorted = cards.slice().sort(function (a, b) {
+            if (sortMode === 'price-asc') return a._numPrice - b._numPrice;
+            if (sortMode === 'price-desc') return b._numPrice - a._numPrice;
+            if (sortMode === 'name-asc') {
+                return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+            }
+            if (sortMode === 'stock-desc') return b._numStock - a._numStock;
+            return (parseInt(a.getAttribute('data-index'), 10) || 0) - (parseInt(b.getAttribute('data-index'), 10) || 0);
+        });
+
+        var visible = 0;
+        sorted.forEach(function (card) {
+            var c = (card.getAttribute('data-cat') || '').trim();
+            var p = (card.getAttribute('data-prov') || '').trim();
+            var n = (card.getAttribute('data-name') || '').toLowerCase();
+            var st = card._numStock;
+
+            var ok = true;
+            if (selCat && c !== selCat) ok = false;
+            if (selProv && p !== selProv) ok = false;
+            if (selStock === 'in' && st <= 0) ok = false;
+            if (selStock === 'low' && (st <= 0 || st > 15)) ok = false;
+            if (selStock === 'out' && st > 0) ok = false;
+            if (q && n.indexOf(q) === -1 && c.toLowerCase().indexOf(q) === -1 && p.toLowerCase().indexOf(q) === -1) ok = false;
+
+            card.style.display = ok ? '' : 'none';
+            if (ok) visible++;
+            grid.appendChild(card);
+        });
+
+        if (countEl) countEl.textContent = visible;
+    }
+
+    catSelect.addEventListener('change', applyFilterAndSort);
+    provSelect.addEventListener('change', applyFilterAndSort);
+    stockSelect.addEventListener('change', applyFilterAndSort);
+    queryInput.addEventListener('input', applyFilterAndSort);
+    sortSelect.addEventListener('change', applyFilterAndSort);
+})();
+</script>
+
+
+
+
+<script id="ds-train-center-script">
+(function () {
+    function asegurarDegradadoOroSVG(svg) {
+        var defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.insertBefore(defs, svg.firstChild);
+        }
+        if (!svg.querySelector('#dsPureGoldGrad')) {
+            var grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            grad.setAttribute('id', 'dsPureGoldGrad');
+            grad.setAttribute('x1', '0%');
+            grad.setAttribute('y1', '0%');
+            grad.setAttribute('x2', '0%');
+            grad.setAttribute('y2', '100%');
+
+            var stops = [
+                { offset: '0%', color: '#FFF2BD' },
+                { offset: '38%', color: '#F6D776' },
+                { offset: '72%', color: '#D3A436' },
+                { offset: '100%', color: '#F9E59A' }
+            ];
+            stops.forEach(function (st) {
+                var stopEl = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stopEl.setAttribute('offset', st.offset);
+                stopEl.setAttribute('stop-color', st.color);
+                grad.appendChild(stopEl);
+            });
+            defs.appendChild(grad);
+        }
+    }
+
+    function centrarTitulosEnVagones() {
+        var svgs = document.querySelectorAll('svg');
+        svgs.forEach(function (svg) {
+            var allTexts = Array.prototype.slice.call(svg.querySelectorAll('text'));
+            var brandTexts = allTexts.filter(function (t) {
+                return /dandelion\s*star/i.test(t.textContent || '');
+            });
+            if (!brandTexts.length) return;
+
+            asegurarDegradadoOroSVG(svg);
+
+            brandTexts.sort(function (a, b) {
+                return a.getBoundingClientRect().left - b.getBoundingClientRect().left;
+            });
+
+            var svgBox = svg.getBoundingClientRect();
+            if (!svgBox.width || !svgBox.height) return;
+
+            var allRects = Array.prototype.slice.call(svg.querySelectorAll('rect')).map(function (r) {
+                var b = r.getBoundingClientRect();
+                return { el: r, box: b, w: b.width, h: b.height };
+            }).filter(function (item) {
+                return item.w > 6 && item.h > 6 && item.w < svgBox.width * 0.45;
+            });
+
+            var allShapes = Array.prototype.slice.call(svg.querySelectorAll('rect, path, ellipse, circle')).map(function (el) {
+                var b = el.getBoundingClientRect();
+                return { el: el, tag: el.tagName.toLowerCase(), box: b, w: b.width, h: b.height };
+            }).filter(function (item) {
+                return item.w > 4 && item.h > 4 && item.w < svgBox.width * 0.45;
+            });
+
+            if (!allShapes.length) return;
+
+            var trainLeft = Math.min.apply(null, allShapes.map(function (s) { return s.box.left; }));
+            var trainRight = Math.max.apply(null, allShapes.map(function (s) { return s.box.right; }));
+            var trainWidth = trainRight - trainLeft;
+            if (trainWidth <= 0) return;
+
+            var passengerWins = allShapes.filter(function (s) {
+                var relX = (s.box.left - trainLeft) / trainWidth;
+                var relW = s.w / trainWidth;
+                var ratio = s.w / s.h;
+                return relX < 0.58 && relW >= 0.011 && relW <= 0.032 && ratio >= 0.38 && ratio <= 0.85;
+            });
+
+            passengerWins.sort(function (a, b) { return a.box.left - b.box.left; });
+            var distinctWins = [];
+            passengerWins.forEach(function (wItem) {
+                var wCx = wItem.box.left + wItem.w / 2;
+                var found = distinctWins.find(function (d) {
+                    return Math.abs((d.box.left + d.w / 2) - wCx) < trainWidth * 0.012;
+                });
+                if (!found) {
+                    distinctWins.push(wItem);
+                } else if (wItem.w > found.w) {
+                    distinctWins[distinctWins.indexOf(found)] = wItem;
+                }
+            });
+
+            var targets = [];
+
+            for (var carIdx = 0; carIdx < 2; carIdx++) {
+                var w2 = distinctWins[carIdx * 4 + 1];
+                var w3 = distinctWins[carIdx * 4 + 2];
+                if (w2 && w3 && w3.box.left > w2.box.right) {
+                    var gap = w2.w * 0.18;
+                    var pLeft = w2.box.right + gap;
+                    var pRight = w3.box.left - gap;
+                    var pTop = Math.min(w2.box.top, w3.box.top);
+                    var pBottom = Math.max(w2.box.bottom, w3.box.bottom);
+
+                    var ovals = allShapes.filter(function (s) {
+                        var cx = s.box.left + s.w / 2;
+                        var cy = s.box.top + s.h / 2;
+                        return cx > pLeft && cx < pRight &&
+                               cy > pTop && cy < pBottom &&
+                               s.w >= 4 && s.w <= (pRight - pLeft) * 0.14 &&
+                               s.h >= 6 && s.h <= (pBottom - pTop) * 0.45;
+                    });
+                    ovals.sort(function (a, b) { return a.box.left - b.box.left; });
+
+                    var innerLeft = pLeft;
+                    var innerRight = pRight;
+                    if (ovals.length >= 2) {
+                        innerLeft = ovals[0].box.right + 4;
+                        innerRight = ovals[ovals.length - 1].box.left - 4;
+                    } else {
+                        innerLeft = pLeft + (pRight - pLeft) * 0.09;
+                        innerRight = pRight - (pRight - pLeft) * 0.09;
+                    }
+
+                    var usableW = Math.max(28, innerRight - innerLeft);
+                    var pH = Math.max(14, pBottom - pTop);
+
+                    targets[carIdx] = {
+                        cx: (innerLeft + innerRight) / 2,
+                        cy: pTop + pH * 0.56,
+                        maxW: usableW * 0.94,
+                        maxH: pH * 0.78
+                    };
+                }
+            }
+
+            if (!targets[0] || !targets[1]) {
+                var bodyRects = allRects.filter(function (r) {
+                    var relX = (r.box.left - trainLeft) / trainWidth;
+                    var relW = r.w / trainWidth;
+                    return relX < 0.58 && relW >= 0.16 && relW <= 0.28 && r.h >= 24;
+                });
+                bodyRects.sort(function (a, b) { return a.box.left - b.box.left; });
+                var cars = [];
+                bodyRects.forEach(function (c) {
+                    var cx = c.box.left + c.w / 2;
+                    if (!cars.some(function (x) { return Math.abs((x.box.left + x.w / 2) - cx) < trainWidth * 0.08; })) {
+                        cars.push(c);
+                    }
+                });
+                for (var i = 0; i < 2; i++) {
+                    if (!targets[i] && cars[i]) {
+                        var cb = cars[i].box;
+                        targets[i] = {
+                            cx: cb.left + cb.width / 2,
+                            cy: cb.top + cb.height * 0.46,
+                            maxW: cb.width * 0.42,
+                            maxH: cb.height * 0.42
+                        };
+                    }
+                }
+            }
+
+            var tenderPlaques = allRects.filter(function (r) {
+                var relCx = (r.box.left + r.w / 2 - trainLeft) / trainWidth;
+                var relW = r.w / trainWidth;
+                var ratio = r.w / r.h;
+                return relCx >= 0.54 && relCx <= 0.74 && relW >= 0.08 && relW <= 0.20 && ratio >= 1.8 && ratio <= 4.6;
+            });
+            tenderPlaques.sort(function (a, b) { return a.w - b.w; });
+            if (tenderPlaques.length) {
+                var tb = tenderPlaques[0].box;
+                targets[2] = {
+                    cx: tb.left + tb.width / 2,
+                    cy: tb.top + tb.height * 0.52,
+                    maxW: tb.width * 0.88,
+                    maxH: tb.height * 0.78
+                };
+            }
+
+            var cabCandidates = allRects.filter(function (r) {
+                var relCx = (r.box.left + r.w / 2 - trainLeft) / trainWidth;
+                var relW = r.w / trainWidth;
+                var ratio = r.w / r.h;
+                return relCx >= 0.72 && relCx <= 0.88 && relW >= 0.07 && relW <= 0.18 && ratio >= 0.85 && ratio <= 2.2;
+            });
+            cabCandidates.sort(function (a, b) { return (b.w * b.h) - (a.w * a.h); });
+            if (cabCandidates.length) {
+                var cab = cabCandidates[0];
+                var cabWins = allShapes.filter(function (s) {
+                    return s.box.left >= cab.box.left - 2 &&
+                           s.box.right <= cab.box.right + 2 &&
+                           s.box.top >= cab.box.top - 2 &&
+                           s.box.bottom < cab.box.top + cab.h * 0.72 &&
+                           s.w < cab.w * 0.45;
+                });
+                var topLimit = cabWins.length
+                    ? Math.max.apply(null, cabWins.map(function (w) { return w.box.bottom; }))
+                    : (cab.box.top + cab.h * 0.56);
+                var stripH = Math.max(10, cab.box.bottom - topLimit);
+                targets[3] = {
+                    cx: cab.box.left + cab.w / 2,
+                    cy: topLimit + stripH * 0.50,
+                    maxW: cab.w * 0.90,
+                    maxH: stripH * 0.86
+                };
+            }
+
+            var ctm = svg.getScreenCTM();
+            if (!ctm) return;
+
+            brandTexts.forEach(function (txt, idx) {
+                var target = targets[idx];
+                if (!target) return;
+
+                // Renderizado vectorial puro con degradado SVG nativo (cero pixelación)
+                txt.style.stroke = 'none';
+                txt.style.strokeWidth = '0';
+                txt.style.filter = 'none';
+                txt.style.fontFamily = "'Great Vibes', 'Pinyon Script', 'Edwardian Script ITC', cursive";
+                txt.style.fontWeight = '400';
+                txt.setAttribute('fill', 'url(#dsPureGoldGrad)');
+                txt.setAttribute('text-rendering', 'geometricPrecision');
+                txt.removeAttribute('stroke');
+                txt.removeAttribute('stroke-width');
+                txt.removeAttribute('paint-order');
+                txt.removeAttribute('textLength');
+                txt.removeAttribute('lengthAdjust');
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('dominant-baseline', 'central');
+
+                Array.prototype.slice.call(txt.querySelectorAll('tspan')).forEach(function (ts) {
+                    ts.removeAttribute('x');
+                    ts.removeAttribute('dx');
+                    ts.removeAttribute('y');
+                    ts.removeAttribute('dy');
+                    ts.removeAttribute('stroke');
+                    ts.removeAttribute('stroke-width');
+                    ts.setAttribute('fill', 'url(#dsPureGoldGrad)');
+                });
+
+                var localCtm = txt.getScreenCTM() || ctm;
+                var inv = localCtm.inverse();
+
+                var ptCenter = svg.createSVGPoint();
+                ptCenter.x = target.cx;
+                ptCenter.y = target.cy;
+                var localCenter = ptCenter.matrixTransform(inv);
+
+                txt.setAttribute('x', localCenter.x.toFixed(2));
+                txt.setAttribute('y', localCenter.y.toFixed(2));
+
+                var testSize = 24;
+                txt.setAttribute('font-size', testSize);
+                var curBox = txt.getBoundingClientRect();
+                if (curBox.width > 0 && curBox.height > 0) {
+                    var scaleW = target.maxW / curBox.width;
+                    var scaleH = (target.maxH * 1.32) / curBox.height;
+                    var bestScale = Math.min(scaleW, scaleH);
+                    var finalSize = Math.max(10.5, Math.min(54, testSize * bestScale));
+                    txt.setAttribute('font-size', finalSize.toFixed(2));
+                }
+
+                var finalBox = txt.getBoundingClientRect();
+                if (finalBox.width > 0 && finalBox.height > 0) {
+                    var visualCx = finalBox.left + finalBox.width / 2;
+                    var visualCy = finalBox.top + finalBox.height / 2;
+                    var dxScreen = target.cx - visualCx;
+                    var dyScreen = target.cy - visualCy;
+
+                    var ptAdjusted = svg.createSVGPoint();
+                    ptAdjusted.x = target.cx + dxScreen;
+                    ptAdjusted.y = target.cy + dyScreen;
+                    var localAdjusted = ptAdjusted.matrixTransform(inv);
+
+                    txt.setAttribute('x', localAdjusted.x.toFixed(2));
+                    txt.setAttribute('y', localAdjusted.y.toFixed(2));
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', centrarTitulosEnVagones);
+    } else {
+        centrarTitulosEnVagones();
+    }
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(centrarTitulosEnVagones);
+    }
+    window.addEventListener('load', centrarTitulosEnVagones);
+    window.addEventListener('resize', centrarTitulosEnVagones);
+})();
+</script>
+{% endblock %}

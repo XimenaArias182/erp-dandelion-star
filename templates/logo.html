@@ -1,0 +1,15 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Pinyon+Script&display=swap" rel="stylesheet">
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="text-center py-5">
+    <div class="logo-lightbox-ring mx-auto" style="position:static;">
+        <img src="{% static 'img/logo.png' %}" alt="Dandelion Star">
+    </div>
+    <div class="ds-palacio-hero logo-lightbox-name mt-4">Dandelion Star</div>
+</div>
+{% endblock %}

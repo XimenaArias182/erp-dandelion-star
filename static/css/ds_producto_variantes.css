@@ -1,0 +1,192 @@
+/* Estilos limpios para tarjetas del catálogo, colores, formato de precio y diferencia de stock */
+.ds-card-interactive {
+    cursor: pointer;
+    position: relative;
+}
+.ds-card-colour-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 6px;
+}
+.ds-card-mini-thumb {
+    width: 28px;
+    height: 28px;
+    background: #F6F6F6;
+    padding: 2px;
+    border-bottom: 1.5px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+.ds-card-mini-thumb.active {
+    border-bottom: 1.5px solid #141414;
+}
+.ds-card-mini-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.ds-card-img-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #E0E0E0;
+    background: rgba(255, 255, 255, 0.92);
+    color: #141414;
+    font-size: 16px;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 6;
+}
+.ds-card-interactive:hover .ds-card-img-nav {
+    display: flex;
+}
+.ds-card-img-prev { left: 10px; }
+.ds-card-img-next { right: 10px; }
+
+/* Bloque editorial dentro de Agregar / Editar Producto */
+.ds-form-variantes-panel {
+    margin: 24px 0;
+    padding: 22px 24px;
+    border: 1px solid #E5E5E5;
+    background: #FAFAFA;
+    font-family: 'Montserrat', sans-serif;
+}
+.ds-form-variantes-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #141414;
+    margin: 0 0 16px 0;
+}
+.ds-form-var-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4A4A4A;
+    margin-bottom: 6px;
+}
+.ds-form-var-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #DCDCDC;
+    background: #FFFFFF;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: #141414;
+}
+.ds-color-variant-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.2fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    background: #FFFFFF;
+    padding: 10px;
+    border: 1px solid #E8E8E8;
+}
+.ds-var-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #FFFFFF;
+    border: 1px solid #141414;
+    color: #141414;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 4px;
+}
+.ds-var-add-btn:hover {
+    background: #141414;
+    color: #FFFFFF;
+}
+.ds-var-remove-btn {
+    background: none;
+    border: 1px solid #DCDCDC;
+    color: #666;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 15px;
+}
+.ds-var-remove-btn:hover {
+    border-color: #B00020;
+    color: #B00020;
+}
+.ds-existing-var-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.ds-existing-var-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background: #FFFFFF;
+    border: 1px solid #DCDCDC;
+    font-size: 12px;
+}
+.ds-existing-var-chip img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    background: #F6F6F6;
+}
+
+/* Tarjeta editorial de diferencia de stock en cada compra / venta */
+.ds-stock-diff-box {
+    margin: 14px 0 18px;
+    padding: 14px 18px;
+    border: 1px solid #E2E2E2;
+    background: #FAFAFA;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.ds-stock-diff-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.ds-stock-diff-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6B6B6B;
+}
+.ds-stock-diff-val {
+    font-size: 15px;
+    font-weight: 500;
+    color: #141414;
+}
+.ds-stock-diff-val.ok { color: #1B5E43; }
+.ds-stock-diff-val.warn { color: #B00020; }
+.ds-stock-diff-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #DCDCDC;
+    background: #FFFFFF;
+    color: #141414;
+}

@@ -1,0 +1,496 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dandelion Star</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="/static/css/ds_global_theme_font.css?v=oro4">
+    <style>
+        :root {
+            --ds-bg: #FFFFFF;
+            --ds-surface: #F6F6F6;
+            --ds-border: #E8E8E8;
+            --ds-ink: #141414;
+            --ds-muted: #595959;
+            --ds-gold: #9A7014;
+            --ds-emerald: #1B5E43;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--ds-bg);
+            color: var(--ds-ink);
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .ds-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 44px;
+            border-bottom: 1px solid var(--ds-border);
+            background: #FFFFFF;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .ds-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--ds-ink);
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: opacity 0.2s ease;
+        }
+        .ds-back-link:hover { opacity: 0.6; }
+        .ds-brand-header {
+            font-family: 'Great Vibes', cursive !important;
+            font-size: 2.2rem !important;
+            color: var(--ds-gold) !important;
+            text-decoration: none;
+        }
+        .ds-detail-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 40px 44px 76px;
+            display: grid;
+            grid-template-columns: 1.25fr 0.95fr;
+            gap: 56px;
+            align-items: start;
+        }
+        @media (max-width: 960px) {
+            .ds-detail-shell {
+                grid-template-columns: 1fr;
+                padding: 24px 20px 56px;
+                gap: 32px;
+            }
+            .ds-topbar { padding: 14px 20px; }
+        }
+
+        /* Visor deslizante principal */
+        .ds-gallery-stage {
+            position: relative;
+            background: var(--ds-surface);
+            aspect-ratio: 4 / 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            touch-action: pan-y;
+            cursor: grab;
+        }
+        .ds-gallery-stage:active { cursor: grabbing; }
+        .ds-stage-track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .ds-stage-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 36px;
+        }
+        .ds-stage-slide img {
+            max-width: 88%;
+            max-height: 88%;
+            object-fit: contain;
+            pointer-events: none;
+            transition: transform 0.3s ease;
+        }
+        .ds-stage-slide:hover img { transform: scale(1.03); }
+        .ds-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--ds-ink);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+        .ds-nav-arrow:hover {
+            background: var(--ds-ink);
+            color: #FFFFFF;
+        }
+        .ds-nav-prev { left: 16px; }
+        .ds-nav-next { right: 16px; }
+        .ds-slide-dots {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 7px;
+            z-index: 8;
+        }
+        .ds-slide-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(20, 20, 20, 0.22);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .ds-slide-dot.active {
+            background: var(--ds-ink);
+            transform: scale(1.25);
+        }
+
+        /* Miniaturas de ángulos/diseños debajo del visor */
+        .ds-angles-strip {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .ds-angle-thumb {
+            width: 74px;
+            height: 74px;
+            flex: 0 0 74px;
+            background: var(--ds-surface);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        .ds-angle-thumb.active {
+            border-bottom: 2px solid var(--ds-ink);
+        }
+        .ds-angle-thumb img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Columna derecha editorial */
+        .ds-meta-tag {
+            font-size: 12.5px;
+            color: var(--ds-muted);
+            margin-bottom: 10px;
+        }
+        .ds-prod-title {
+            font-family: 'Montserrat', sans-serif !important;
+            font-size: 25px !important;
+            font-weight: 500 !important;
+            color: var(--ds-ink) !important;
+            -webkit-text-fill-color: var(--ds-ink) !important;
+            margin: 0 0 16px 0 !important;
+            line-height: 1.32 !important;
+            padding: 0 !important;
+        }
+        .ds-price-stock {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--ds-border);
+            margin-bottom: 26px;
+        }
+        .ds-price {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--ds-ink);
+        }
+        .ds-stock {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            color: var(--ds-muted);
+        }
+        .ds-stock-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ds-emerald);
+        }
+
+        /* Bloque "Color <Nombre>" con las imágenes de cada color ABAJO */
+        .ds-colour-block {
+            margin-top: 6px;
+        }
+        .ds-colour-header {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+        .ds-colour-label {
+            font-weight: 600;
+            color: var(--ds-ink);
+        }
+        .ds-colour-value {
+            font-weight: 300;
+            color: var(--ds-muted);
+        }
+        .ds-colour-thumbs-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .ds-colour-card {
+            width: 72px;
+            height: 72px;
+            background: var(--ds-surface);
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .ds-colour-card:hover {
+            border-color: #DCDCDC;
+            border-bottom-color: #888888;
+        }
+        .ds-colour-card.active {
+            border-bottom: 2px solid var(--ds-ink);
+        }
+        .ds-colour-card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <header class="ds-topbar">
+        <a href="{{ back_url }}" class="ds-back-link">
+            <span>←</span>
+            <span>Catálogo</span>
+        </a>
+        <a href="/" class="ds-brand-header">Dandelion Star</a>
+                <div style="width: 110px; text-align: right;"></div>
+    </header>
+
+    <main class="ds-detail-shell">
+        <!-- Visor deslizante izquierdo -->
+        <div>
+            <div class="ds-gallery-stage" id="dsGalleryStage">
+                {% if slides|length > 1 %}
+                <button type="button" class="ds-nav-arrow ds-nav-prev" id="dsPrevSlide" aria-label="Anterior">‹</button>
+                {% endif %}
+
+                <div class="ds-stage-track" id="dsStageTrack">
+                    {% for item in slides %}
+                    <div class="ds-stage-slide" data-color-id="{{ item.color_id|default:'' }}" data-color-name="{{ item.color_name|default:'' }}">
+                        <img src="{{ item.url }}" alt="{{ producto_nombre }}">
+                    </div>
+                    {% empty %}
+                    <div class="ds-stage-slide">
+                        <span style="color: #888; font-size: 13px;">Sin imagen disponible</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if slides|length > 1 %}
+                <button type="button" class="ds-nav-arrow ds-nav-next" id="dsNextSlide" aria-label="Siguiente">›</button>
+                <div class="ds-slide-dots" id="dsSlideDots">
+                    {% for item in slides %}
+                    <button type="button" class="ds-slide-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if slides|length > 1 %}
+            <div class="ds-angles-strip" id="dsAnglesStrip">
+                {% for item in slides %}
+                <div class="ds-angle-thumb {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+                    <img src="{{ item.url }}" alt="Vista {{ forloop.counter }}">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Ficha editorial derecha -->
+        <div>
+            <div class="ds-meta-tag">
+                {% if categoria_nombre %}{{ categoria_nombre }}{% endif %}
+                {% if categoria_nombre and proveedor_nombre %} · {% endif %}
+                {% if proveedor_nombre %}{{ proveedor_nombre }}{% endif %}
+            </div>
+
+            <h1 class="ds-prod-title">{{ producto_nombre }}</h1>
+
+            <div class="ds-price-stock">
+                <div class="ds-price">${{ producto_precio }}</div>
+                <div class="ds-stock">
+                    <span class="ds-stock-dot"></span>
+                    <span>{{ producto_stock }} piezas</span>
+                </div>
+            </div>
+
+            <!-- Sección Colour con el nombre arriba y las miniaturas de cada color ABAJO -->
+            {% if colores %}
+            <div class="ds-colour-block">
+                <div class="ds-colour-header">
+                    <span class="ds-colour-label">Color</span>
+                    <span class="ds-colour-value" id="dsActiveColorName">{{ colores.0.nombre }}</span>
+                </div>
+
+                <div class="ds-colour-thumbs-row" id="dsColourThumbsRow">
+                    {% for c in colores %}
+                    <div class="ds-colour-card {% if forloop.first %}active{% endif %}"
+                         data-color-id="{{ c.id }}"
+                         data-color-name="{{ c.nombre }}"
+                         data-slide-index="{{ c.slide_index }}"
+                         title="{{ c.nombre }}">
+                        {% if c.thumb_url %}
+                        <img src="{{ c.thumb_url }}" alt="{{ c.nombre }}">
+                        {% else %}
+                        <span style="font-size: 11px; color: #555;">{{ c.nombre }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+    (function () {
+        var track = document.getElementById('dsStageTrack');
+        var stage = document.getElementById('dsGalleryStage');
+        var slides = Array.prototype.slice.call(document.querySelectorAll('.ds-stage-slide'));
+        var angleThumbs = Array.prototype.slice.call(document.querySelectorAll('.ds-angle-thumb'));
+        var dots = Array.prototype.slice.call(document.querySelectorAll('.ds-slide-dot'));
+        var colourCards = Array.prototype.slice.call(document.querySelectorAll('.ds-colour-card'));
+        var colorNameEl = document.getElementById('dsActiveColorName');
+        var total = slides.length;
+        var current = 0;
+
+        function goToSlide(idx) {
+            if (!total) return;
+            current = (idx + total) % total;
+            track.style.transform = 'translateX(-' + (current * 100) + '%)';
+
+            angleThumbs.forEach(function (t, i) { t.classList.toggle('active', i === current); });
+            dots.forEach(function (d, i) { d.classList.toggle('active', i === current); });
+
+            var slideColorId = slides[current].getAttribute('data-color-id');
+            if (slideColorId) {
+                colourCards.forEach(function (card) {
+                    var isMatch = card.getAttribute('data-color-id') === slideColorId;
+                    card.classList.toggle('active', isMatch);
+                    if (isMatch && colorNameEl) {
+                        colorNameEl.textContent = card.getAttribute('data-color-name');
+                    }
+                });
+            }
+        }
+
+        var prevBtn = document.getElementById('dsPrevSlide');
+        var nextBtn = document.getElementById('dsNextSlide');
+        if (prevBtn) prevBtn.addEventListener('click', function () { goToSlide(current - 1); });
+        if (nextBtn) nextBtn.addEventListener('click', function () { goToSlide(current + 1); });
+
+        angleThumbs.forEach(function (t) {
+            t.addEventListener('click', function () {
+                goToSlide(parseInt(t.getAttribute('data-index'), 10) || 0);
+            });
+        });
+
+        dots.forEach(function (d) {
+            d.addEventListener('click', function () {
+                goToSlide(parseInt(d.getAttribute('data-index'), 10) || 0);
+            });
+        });
+
+        colourCards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                colourCards.forEach(function (c) { c.classList.remove('active'); });
+                card.classList.add('active');
+                if (colorNameEl) {
+                    colorNameEl.textContent = card.getAttribute('data-color-name');
+                }
+                var sIdx = parseInt(card.getAttribute('data-slide-index'), 10);
+                if (!isNaN(sIdx) && sIdx >= 0 && sIdx < total) {
+                    goToSlide(sIdx);
+                }
+            });
+        });
+
+        // Arrastre con ratón y deslizamiento táctil para mover la imagen
+        if (stage && total > 1) {
+            var startX = 0;
+            var deltaX = 0;
+            var dragging = false;
+
+            function onStart(x) {
+                startX = x;
+                deltaX = 0;
+                dragging = true;
+                track.style.transition = 'none';
+            }
+            function onMove(x) {
+                if (!dragging) return;
+                deltaX = x - startX;
+                var pct = (-current * 100) + (deltaX / stage.offsetWidth) * 100;
+                track.style.transform = 'translateX(' + pct + '%)';
+            }
+            function onEnd() {
+                if (!dragging) return;
+                dragging = false;
+                track.style.transition = 'transform 0.36s cubic-bezier(0.22, 1, 0.36, 1)';
+                if (Math.abs(deltaX) > 42) {
+                    goToSlide(deltaX < 0 ? current + 1 : current - 1);
+                } else {
+                    goToSlide(current);
+                }
+            }
+
+            stage.addEventListener('mousedown', function (e) {
+                if (e.target.closest('button')) return;
+                onStart(e.clientX);
+            });
+            window.addEventListener('mousemove', function (e) { onMove(e.clientX); });
+            window.addEventListener('mouseup', onEnd);
+
+            stage.addEventListener('touchstart', function (e) {
+                if (e.touches.length) onStart(e.touches[0].clientX);
+            }, { passive: true });
+            stage.addEventListener('touchmove', function (e) {
+                if (e.touches.length) onMove(e.touches[0].clientX);
+            }, { passive: true });
+            stage.addEventListener('touchend', onEnd);
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowLeft') goToSlide(current - 1);
+            if (e.key === 'ArrowRight') goToSlide(current + 1);
+        });
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dandelion Star{% endblock %}
+{% block nav_reportes %}active{% endblock %}
+
+{% block content %}
+<style id="ds-luxury-report-style">
+    main, .erp-main, .content-wrapper {
+        background: #FFFFFF !important;
+        color: #111111 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    main h1, main h2, .content-wrapper h1, .content-wrapper h2 {
+        font-weight: 400 !important;
+        letter-spacing: 0.04em !important;
+        color: #111111 !important;
+        border-bottom: 1px solid #EAEAEA;
+        padding-bottom: 12px;
+    }
+    main .card, .content-wrapper .card {
+        background: #F6F6F6 !important;
+        border: 1px solid #ECECEC !important;
+        border-radius: 2px !important;
+        box-shadow: none !important;
+    }
+    main table, .content-wrapper table {
+        background: #FFFFFF !important;
+        border: 1px solid #ECECEC !important;
+        border-collapse: collapse !important;
+    }
+    main table thead th, .content-wrapper table thead th {
+        background: #F6F6F6 !important;
+        color: #111111 !important;
+        font-size: 0.76rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        border-bottom: 1px solid #E5E5E5 !important;
+    }
+    main table tbody td, .content-wrapper table tbody td {
+        background: #FFFFFF !important;
+        color: #222222 !important;
+        border-bottom: 1px solid #F0F0F0 !important;
+        font-size: 0.84rem !important;
+    }
+</style>
+
+<div class="erp-page-title">
+    <h2>📊 Reportes y Dashboard</h2>
+    <span class="badge-erp-gold ms-auto">Espiral 7 · W19</span>
+</div>
+<div class="erp-card">
+    <div class="erp-card-header">Módulo de Analítica</div>
+    <p>KPIs, gráficas de ventas y exportación de datos.</p>
+    <div class="erp-alert-info">
+        <strong>Estado W02:</strong> Módulo en construcción.
+        Dashboard en <span class="badge-erp-gold">Espiral 7 · W19–W21</span>
+    </div>
+    <br>
+    <a href="/" class="btn-erp-primary">← Inicio</a>
+</div>
+{% endblock %}
