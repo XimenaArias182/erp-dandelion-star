@@ -338,14 +338,13 @@ def api_catalogo_variantes(request):
         }
     return JsonResponse(data)
 
-
 # === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
 import traceback as _prod_traceback
 from decimal import Decimal as _ProdDecimal
 from django.contrib import messages as _prod_messages
 from django.contrib.auth.decorators import login_required as _prod_login_required
 from django.db import connection as _prod_connection
-from django.http import Http404 as _ProdHttp404, HttpResponse as _ProdHttpResponse
+from django.http import Http404 as _ProdHttp404
 from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
 from django.urls import reverse as _prod_reverse
 from django.views.decorators.http import require_POST as _prod_require_POST
@@ -428,7 +427,7 @@ def _build_producto_editorial_data(producto):
     cat_obj = getattr(producto, 'categoria', None)
     prov_obj = getattr(producto, 'proveedor', None)
 
-    cat_nombre = _prod_safe_str(_prod_first_attr(cat_obj, ['nombre', 'titulo'], None), '') or _prod_safe_str(cat_obj, 'Colecci?n Exclusiva')
+    cat_nombre = _prod_safe_str(_prod_first_attr(cat_obj, ['nombre', 'titulo'], None), '') or _prod_safe_str(cat_obj, 'Colección Exclusiva')
     prov_nombre = _prod_safe_str(_prod_first_attr(prov_obj, ['nombre', 'razon_social', 'titulo'], None), '') or _prod_safe_str(prov_obj, empresa_nombre.title())
 
     activo_val = getattr(producto, 'activo', None)
@@ -509,7 +508,7 @@ def _build_producto_editorial_data(producto):
     else:
         colores_list.append({
             'id': 0,
-            'nombre': '?nico / Original',
+            'nombre': 'Único / Original',
             'codigo_hex': '#ebe7e0',
             'imagen_url': img_url,
             'stock': stock_val,
@@ -560,9 +559,8 @@ def producto_detalle_editorial(request, pk=None, id=None, producto_id=None, slug
         ctx.update(_build_producto_editorial_data(producto))
         return _prod_render(request, 'productos/detalle.html', ctx)
     except Exception as exc:
-        err_detail = _prod_traceback.format_exc()
-        print(f"[ERROR producto_detalle_editorial pk={producto.pk}]: {exc}
-{err_detail}")
+        print(f"[ERROR producto_detalle_editorial pk={producto.pk}]: {exc}")
+        print(_prod_traceback.format_exc())
         fallback_ctx = {
             'producto': producto,
             'object': producto,
@@ -573,7 +571,7 @@ def producto_detalle_editorial(request, pk=None, id=None, producto_id=None, slug
             'prod_info': {
                 'id': producto.pk,
                 'nombre': _prod_safe_str(getattr(producto, 'nombre', ''), f'Producto #{producto.pk}'),
-                'categoria': 'Colecci?n Exclusiva',
+                'categoria': 'Colección Exclusiva',
                 'proveedor': 'Dandelion Star',
                 'precio_fmt': _prod_safe_str(getattr(producto, 'precio', '0.00'), '0.00'),
                 'stock': getattr(producto, 'stock', 0) or 0,
