@@ -169,7 +169,9 @@
             max-height: 100%;
             object-fit: contain;
         }
-        .ds-stage-actions { margin-top: 1rem; }
+        .ds-stage-actions {
+            margin-top: 1rem;
+        }
         .ds-upload-inline-btn {
             background: #ffffff;
             border: 1px solid #d4d4d4;
@@ -252,7 +254,6 @@
             height: 28px;
             border-radius: 50%;
             border: 1px solid rgba(0, 0, 0, 0.25);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
             padding: 0;
             cursor: pointer;
             position: relative;
@@ -358,7 +359,7 @@
         .ds-detail-kv {
             display: flex;
             justify-content: space-between;
-            padding: 0.28rem 0;
+            padding: 0.25rem 0;
         }
 
         .ds-modal-backdrop {
@@ -591,14 +592,7 @@
                         {% for col in colores_list %}
                         <div class="ds-detail-kv" style="align-items:center;">
                             <span style="display:inline-flex;align-items:center;gap:0.5rem;">
-                                {% if user.is_authenticated and col.update_url %}
-                                <form method="post" action="{{ col.update_url }}" style="display:inline-flex;align-items:center;">
-                                    {% csrf_token %}
-                                    <input type="color" name="codigo_hex" value="{{ col.codigo_hex }}" onchange="this.form.submit()" title="Cambiar tono de {{ col.nombre }}" style="width:20px;height:20px;padding:0;border:1px solid #ccc;border-radius:50%;cursor:pointer;background:none;">
-                                </form>
-                                {% else %}
                                 <span style="width:12px;height:12px;border-radius:50%;background:{{ col.codigo_hex }};border:1px solid rgba(0,0,0,0.25);display:inline-block;"></span>
-                                {% endif %}
                                 {{ col.nombre }}
                             </span>
                             <span>
@@ -650,14 +644,11 @@
                 {% csrf_token %}
                 <div class="ds-field">
                     <label for="id_col_nombre">Nombre del color</label>
-                    <input type="text" id="id_col_nombre" name="nombre" oninput="ajustarTonoPorNombre(this.value)" placeholder="Ej. Brotes de Invierno, Negro, Beige, Dorado" required>
+                    <input type="text" id="id_col_nombre" name="nombre" placeholder="Ej. Negro, Beige, Dorado" required>
                 </div>
                 <div class="ds-field">
-                    <label for="id_col_hex">Tono de muestra</label>
-                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                        <input type="color" id="id_col_hex" name="codigo_hex" value="#7d9471" oninput="tonoEditadoManualmente = true" style="width:64px;height:40px;padding:2px;border:1px solid #d4d4d4;">
-                        <span style="font-size:0.78rem;color:#666;">Puedes pulsar el cuadro para elegir el tono exacto</span>
-                    </div>
+                    <label for="id_col_hex">Selecciona el tono exacto</label>
+                    <input type="color" id="id_col_hex" name="codigo_hex" value="#1c1c1c" style="width:64px;height:40px;padding:2px;border:1px solid #d4d4d4;">
                 </div>
                 <div class="ds-field">
                     <label for="id_col_imgs">Im&aacute;genes para este color (puedes elegir varias)</label>
@@ -688,36 +679,6 @@
     {% endif %}
 
     <script>
-        let tonoEditadoManualmente = false;
-
-        const TONOS_NOMBRE = [
-            ['brotes de invierno', '#7d9471'], ['brote de invierno', '#7d9471'], ['invierno', '#8fa399'],
-            ['azul marino', '#1b2f4f'], ['azul cielo', '#7ec8e3'], ['celeste', '#7ec8e3'],
-            ['turquesa', '#30b5ad'], ['menta', '#76c7a8'], ['salvia', '#8fa387'], ['oliva', '#6b7c45'], ['esmeralda', '#1f6f50'],
-            ['blanco perla', '#f7f5f0'], ['marfil', '#f5f0e1'], ['crema', '#f3ead8'],
-            ['negro', '#141414'], ['black', '#141414'],
-            ['blanco', '#f8f7f4'], ['white', '#f8f7f4'], ['perla', '#f4f1ea'],
-            ['latte', '#d6c1a9'], ['beige', '#dfd1be'], ['arena', '#dccbb4'], ['nude', '#e3c6b2'], ['camel', '#b88b58'],
-            ['cafe', '#63412c'], ['marron', '#6b442a'], ['chocolate', '#4a2c1d'],
-            ['dorado', '#c9a24b'], ['oro', '#c9a24b'], ['plateado', '#c5c8ce'], ['plata', '#c5c8ce'], ['gris', '#858990'],
-            ['vino', '#6e1b29'], ['burdeos', '#6e1b29'], ['tinto', '#731d2c'], ['rojo', '#b82025'], ['coral', '#e06d53'],
-            ['fucsia', '#c92a76'], ['rosa', '#e8a5b5'], ['azul', '#255499'], ['verde', '#4f795b'],
-            ['amarillo', '#e3b938'], ['mostaza', '#c99a2e'], ['naranja', '#db6a2c'], ['morado', '#6e448a'], ['lila', '#bfa3d4']
-        ];
-
-        function ajustarTonoPorNombre(texto) {
-            if (tonoEditadoManualmente) return;
-            const norm = (texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-            const hexInput = document.getElementById('id_col_hex');
-            if (!hexInput) return;
-            for (const [clave, hex] of TONOS_NOMBRE) {
-                if (norm.includes(clave)) {
-                    hexInput.value = hex;
-                    return;
-                }
-            }
-        }
-
         function cambiarImagenPrincipal(url) {
             const stageImg = document.getElementById('ds-stage-image');
             if (!stageImg || !url) return;
@@ -781,7 +742,6 @@
         }
 
         function abrirModal(id) {
-            if (id === 'ds-color-modal') tonoEditadoManualmente = false;
             const m = document.getElementById(id);
             if (m) m.classList.add('open');
         }
