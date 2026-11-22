@@ -2,6 +2,94 @@
 {% load static %}
 
 {% block content %}
+<style>
+    .ds-pdf-banner {
+        max-width: 920px;
+        margin: 1.5rem auto 1rem;
+        padding: 1.25rem 1.5rem;
+        background: #faf7f0;
+        border: 1px solid #d9c79e;
+        border-left: 4px solid #9e7b2f;
+        border-radius: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    .ds-pdf-banner-info h2 {
+        margin: 0 0 0.25rem;
+        font-size: 1.1rem;
+        color: #1f1f1f;
+    }
+    .ds-pdf-banner-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .ds-pdf-banner-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+    .ds-btn-pdf-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        background: #9e7b2f;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .ds-btn-pdf-primary:hover { background: #836423; }
+    .ds-btn-pdf-secondary {
+        padding: 0.62rem 1.05rem;
+        background: #111111;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.88rem;
+        font-weight: 500;
+    }
+    .ds-btn-pdf-secondary:hover { background: #2d2d2d; }
+    .ds-btn-pdf-link {
+        padding: 0.6rem 0.9rem;
+        border: 1px solid #d8d4cc;
+        background: #ffffff;
+        color: #333333 !important;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.88rem;
+    }
+    .ds-pdf-toolbar {
+        max-width: 920px;
+        margin: 1.25rem auto 0.5rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+
+{% if comprobante or request.GET.comprobante == '1' %}
+<div class="ds-pdf-banner" id="ds-comprobante-banner">
+    <div class="ds-pdf-banner-info">
+        <h2>Venta #{{ venta.pk }} registrada con éxito</h2>
+        <p>Total: <strong>${{ venta.total|floatformat:2 }}</strong> &mdash; Ya puedes descargar el comprobante en PDF.</p>
+    </div>
+    <div class="ds-pdf-banner-actions">
+        <a href="{% url 'ventas:pdf' venta.pk %}" class="ds-btn-pdf-primary">Descargar PDF</a>
+        <a href="{% url 'ventas:crear' %}" class="ds-btn-pdf-secondary">+ Nueva Venta</a>
+        <a href="{% url 'ventas:lista' %}" class="ds-btn-pdf-link">Volver a Ventas</a>
+    </div>
+</div>
+{% else %}
+<div class="ds-pdf-toolbar" id="ds-comprobante-banner">
+    <a href="{% url 'ventas:pdf' venta.pk %}" class="ds-btn-pdf-primary">Descargar PDF</a>
+</div>
+{% endif %}
 <style id="ds-luxury-editorial-grid-style">
     .ds-cat-shell {
         max-width: 1520px;
