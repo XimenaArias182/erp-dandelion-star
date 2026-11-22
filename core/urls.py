@@ -1,3 +1,5 @@
+from django.urls import re_path
+from django.views.static import serve
 from productos.views import producto_detalle_variantes, producto_agregar_color, producto_eliminar_color, producto_agregar_imagenes, producto_eliminar_imagen, api_catalogo_variantes
 # core/urls.py — agregar las rutas de API y token
 from django.contrib import admin
@@ -50,3 +52,4 @@ from django.conf.urls.static import static
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += [re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})]
