@@ -21,7 +21,7 @@
         border-spacing: 0;
     }
 
-    /* CABECERA SUPERIOR: LOGO REDONDO DORADO + NOMBRE DE EMPRESA EN CURSIVA NEGRA */
+    /* CABECERA SUPERIOR: LOGO REDONDO DORADO + NOMBRE EN CALIGRAF?A */
     .top-brand-table {
         margin-bottom: 14px;
     }
@@ -35,20 +35,26 @@
     }
     .brand-title-box {
         text-align: center;
-        padding: 4px 8px;
+        padding: 2px 6px;
+    }
+    .brand-script-img {
+        height: 52pt;
+        width: auto;
+        max-width: 315pt;
+        margin: 0 auto;
     }
     .brand-cursive-title {
         font-family: "Times New Roman", Times, Georgia, serif;
         font-style: italic;
         font-weight: normal;
-        font-size: 33pt;
+        font-size: 34pt;
         line-height: 1.08;
-        color: #111111;
+        color: #1c1c1c;
         margin: 0;
     }
     .brand-gold-rule {
         width: 78%;
-        margin: 7px auto;
+        margin: 5px auto 7px auto;
         border-bottom: 1.5pt solid #b8933d;
     }
     .brand-subtitle {
@@ -61,7 +67,7 @@
         margin: 0;
     }
 
-    /* CUADRÍCULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
+    /* CUADR?CULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
     .meta-grid {
         margin-bottom: 14px;
     }
@@ -82,10 +88,7 @@
         font-size: 9.2pt;
         letter-spacing: 2px;
         text-transform: uppercase;
-        border-top: 1pt solid #222222;
-        border-left: 1pt solid #222222;
-        border-right: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
+        border: 1pt solid #222222;
     }
     .cell-mid-left {
         border-left: 1pt solid #222222;
@@ -126,17 +129,14 @@
         color: #111111;
     }
 
-    /* TABLA PRINCIPAL DE PRODUCTOS CON ENCABEZADO SÓLIDO SIN RAYAS BLANCAS */
+    /* TABLA PRINCIPAL DE PRODUCTOS CON ENCABEZADO S?LIDO SIN RAYAS BLANCAS */
     .items-grid thead tr {
         background-color: #222222;
     }
     .items-grid th {
         background-color: #222222;
         color: #ffffff;
-        border-top: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-        border-left: 1pt solid #222222;
-        border-right: 1pt solid #222222;
+        border: 1pt solid #222222;
         padding: 8px 6px;
         font-size: 9pt;
         font-weight: normal;
@@ -171,16 +171,21 @@
         color: #555555;
     }
 
-    /* BLOQUE INFERIOR: MISMA TABLA PARA EVITAR RAYAS BLANCAS */
+    /* BLOQUE INFERIOR INTEGRADO */
     .empresa-firma-box {
         padding: 12px 14px 6px 18px;
         border: none;
         vertical-align: top;
     }
+    .empresa-firma-script {
+        height: 24pt;
+        width: auto;
+        margin-bottom: 4px;
+    }
     .empresa-firma-nombre {
         font-family: "Times New Roman", Times, Georgia, serif;
         font-style: italic;
-        font-size: 15pt;
+        font-size: 16pt;
         color: #111111;
         font-weight: normal;
         margin-bottom: 4px;
@@ -198,10 +203,7 @@
         text-transform: uppercase;
         padding: 6px 9px;
         font-size: 9.5pt;
-        border-left: 1pt solid #222222;
-        border-right: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-        border-top: 1pt solid #222222;
+        border: 1pt solid #222222;
     }
     .tot-val {
         background-color: #ffffff;
@@ -214,7 +216,7 @@
         border-bottom: 1pt solid #222222;
     }
 
-    /* PIE DE PÁGINA EN 3 COLUMNAS */
+    /* PIE DE P?GINA EN 3 COLUMNAS */
     .footer-table {
         margin-top: 22px;
     }
@@ -241,7 +243,7 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO: LOGO REDONDO CON BRILLO DORADO + NOMBRE DE EMPRESA EN CURSIVA NEGRA -->
+    <!-- ENCABEZADO: LOGO REDONDO DORADO + NOMBRE DE EMPRESA EN CALIGRAF?A -->
     <table class="top-brand-table">
         <tr>
             <td style="width: 22%; text-align: center;">
@@ -251,7 +253,11 @@
             </td>
             <td style="width: 56%;">
                 <div class="brand-title-box">
-                    <div class="brand-cursive-title">{{ empresa.nombre }}</div>
+                    {% if empresa.nombre_script_uri %}
+                        <img src="{{ empresa.nombre_script_uri }}" alt="{{ empresa.nombre }}" class="brand-script-img">
+                    {% else %}
+                        <div class="brand-cursive-title">{{ empresa.nombre }}</div>
+                    {% endif %}
                     <div class="brand-gold-rule"></div>
                     <div class="brand-subtitle">NOTA DE REMISI&Oacute;N</div>
                 </div>
@@ -264,7 +270,7 @@
         </tr>
     </table>
 
-    <!-- CUADRÍCULA DE FACTURA NO., FECHA Y CLIENTE -->
+    <!-- CUADR?CULA DE FACTURA NO., FECHA Y CLIENTE -->
     <table class="meta-grid">
         <tr>
             <td class="cell-top-left" style="width: 71.5%;">
@@ -301,7 +307,7 @@
         </tr>
     </table>
 
-    <!-- TABLA DE PRODUCTOS VENDIDOS + BLOQUE DE TOTALES INTEGRADO -->
+    <!-- TABLA DE PRODUCTOS VENDIDOS + TOTALES -->
     <table class="items-grid">
         <thead>
             <tr>
@@ -336,10 +342,13 @@
             </tr>
             {% endfor %}
 
-            <!-- FILAS DE TOTALES ALINEADAS CON LAS COLUMNAS DE PRECIO -->
             <tr>
                 <td colspan="2" rowspan="{% if venta_info.descuento > 0 %}4{% else %}3{% endif %}" class="empresa-firma-box">
-                    <div class="empresa-firma-nombre">{{ empresa.nombre }}</div>
+                    {% if empresa.nombre_script_uri %}
+                        <img src="{{ empresa.nombre_script_uri }}" alt="{{ empresa.nombre }}" class="empresa-firma-script"><br>
+                    {% else %}
+                        <div class="empresa-firma-nombre">{{ empresa.nombre }}</div>
+                    {% endif %}
                     <div class="empresa-firma-detalle">
                         <div><strong>Lugar de emisi&oacute;n:</strong> {{ venta_info.lugar }}</div>
                         <div><strong>Fecha y hora:</strong> {{ venta_info.dia }}/{{ venta_info.mes }}/{{ venta_info.anio }} {{ venta_info.hora }}</div>
@@ -368,7 +377,7 @@
         </tbody>
     </table>
 
-    <!-- PIE DE PÁGINA EN 3 COLUMNAS -->
+    <!-- PIE DE P?GINA EN 3 COLUMNAS -->
     <table class="footer-table">
         <tr class="footer-head">
             <td>DIRECCI&Oacute;N</td>

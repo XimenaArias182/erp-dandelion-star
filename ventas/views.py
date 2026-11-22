@@ -168,9 +168,9 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         if val in (None, ''):
             return ''
         txt = str(val).strip()
-        if txt in ('?', '—', '–', 'None'):
+        if txt in ('?', '?', '?', 'None'):
             return ''
-        return txt.replace('\ufffd', '')
+        return txt.replace('�', '')
 
     def _first_attr(obj, names, default=''):
         if not obj:
@@ -190,6 +190,50 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                 else:
                     return val
         return default
+
+    def _make_calligraphy_title_uri(text: str) -> str:
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            base_dir = _Path(settings.BASE_DIR)
+            candidates = [
+                base_dir / 'static' / 'fonts' / 'GreatVibes-Regular.ttf',
+                base_dir / 'staticfiles' / 'fonts' / 'GreatVibes-Regular.ttf',
+                _Path('C:/Windows/Fonts/EDWARDOI.TTF'),
+                _Path('C:/Windows/Fonts/KUNSTLER.TTF'),
+                _Path('C:/Windows/Fonts/PALSCRI.TTF'),
+                _Path('C:/Windows/Fonts/FRSCRIPT.TTF'),
+                _Path('C:/Windows/Fonts/BRUSHSCI.TTF'),
+                _Path('C:/Windows/Fonts/SCRIPTBL.TTF'),
+                _Path('C:/Windows/Fonts/SEGOESC.TTF'),
+                _Path('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf'),
+            ]
+            font = None
+            for fp in candidates:
+                if fp.exists():
+                    try:
+                        font = ImageFont.truetype(str(fp), 132)
+                        break
+                    except Exception:
+                        continue
+            if font is None:
+                return ''
+
+            dummy = Image.new('RGB', (10, 10), (255, 255, 255))
+            d_draw = ImageDraw.Draw(dummy)
+            bbox = d_draw.textbbox((0, 0), text, font=font)
+            pad = 26
+            w = max(1, (bbox[2] - bbox[0]) + pad * 2)
+            h = max(1, (bbox[3] - bbox[1]) + pad * 2)
+
+            canvas = Image.new('RGB', (w, h), (255, 255, 255))
+            draw = ImageDraw.Draw(canvas)
+            draw.text((pad - bbox[0], pad - bbox[1]), text, font=font, fill=(28, 28, 28))
+
+            out = _BytesIO()
+            canvas.save(out, format='PNG', optimize=True)
+            return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
+        except Exception:
+            return ''
 
     def _make_round_gold_logo(raw_bytes: bytes) -> str:
         try:
@@ -296,12 +340,13 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     raw_dir = str(_first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], '')).strip()
     if not raw_dir or '?' in raw_dir:
-        direccion_empresa = 'Celaya, Guanajuato, México'
+        direccion_empresa = 'Celaya, Guanajuato, M?xico'
     else:
         direccion_empresa = raw_dir
 
     empresa = {
         'nombre': nombre_empresa,
+        'nombre_script_uri': _make_calligraphy_title_uri(nombre_empresa),
         'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif'], ''),
         'direccion': direccion_empresa,
         'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais'], ''),
@@ -314,7 +359,7 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     cliente_obj = getattr(venta, 'cliente', None)
     cliente_info = {
-        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'Público en General'),
+        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'P?blico en General'),
         'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], ''),
         'email': _first_attr(cliente_obj, ['email', 'correo'], ''),
         'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], ''),
