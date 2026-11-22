@@ -1,11 +1,338 @@
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Comprobante de Compra #{{ venta_info.folio }}</title>
+<style>
+    @page {
+        size: letter;
+        margin: 1.4cm;
+    }
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 10pt;
+        color: #222222;
+        line-height: 1.45;
+        margin: 0;
+        padding: 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .header-table {
+        border-bottom: 2px solid #9e7b2f;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+    .header-table td {
+        vertical-align: top;
+    }
+    .empresa-logo {
+        max-height: 62px;
+        max-width: 170px;
+        margin-bottom: 6px;
+    }
+    .empresa-nombre {
+        font-size: 16pt;
+        font-weight: bold;
+        color: #111111;
+        margin: 0 0 3px 0;
+    }
+    .empresa-dato {
+        font-size: 8.8pt;
+        color: #555555;
+        margin: 1px 0;
+    }
+    .folio-box {
+        text-align: right;
+    }
+    .doc-titulo {
+        font-size: 13pt;
+        font-weight: bold;
+        color: #9e7b2f;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin: 0 0 4px 0;
+    }
+    .doc-folio {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #111111;
+        margin: 0 0 6px 0;
+    }
+    .doc-meta {
+        font-size: 8.8pt;
+        color: #444444;
+        margin: 2px 0;
+    }
+    .info-grid {
+        margin-bottom: 18px;
+    }
+    .info-card {
+        width: 48.5%;
+        vertical-align: top;
+        background-color: #faf8f5;
+        border: 1px solid #e6e0d5;
+        padding: 10px 12px;
+    }
+    .info-spacer {
+        width: 3%;
+    }
+    .card-title {
+        font-size: 8.2pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #9e7b2f;
+        border-bottom: 1px solid #e6e0d5;
+        padding-bottom: 4px;
+        margin-bottom: 7px;
+    }
+    .info-line {
+        font-size: 9pt;
+        margin: 2px 0;
+        color: #222222;
+    }
+    .info-label {
+        font-weight: bold;
+        color: #444444;
+    }
+    .items-table {
+        margin-bottom: 16px;
+    }
+    .items-table th {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        font-size: 8.4pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 8px 7px;
+        border: 1px solid #1a1a1a;
+    }
+    .items-table td {
+        padding: 8px 7px;
+        font-size: 9.2pt;
+        border-bottom: 1px solid #e5e1d8;
+        border-left: 1px solid #eeeeee;
+        border-right: 1px solid #eeeeee;
+        vertical-align: top;
+    }
+    .row-alt {
+        background-color: #fcfbf9;
+    }
+    .text-left { text-align: left; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .prod-sub {
+        font-size: 8pt;
+        color: #666666;
+        margin-top: 2px;
+    }
+    .totales-wrap {
+        margin-top: 6px;
+        margin-bottom: 18px;
+    }
+    .notas-col {
+        width: 56%;
+        vertical-align: top;
+        padding-right: 16px;
+    }
+    .notas-box {
+        background-color: #faf8f5;
+        border: 1px solid #e6e0d5;
+        padding: 9px 11px;
+        font-size: 8.8pt;
+        color: #444444;
+    }
+    .totales-col {
+        width: 44%;
+        vertical-align: top;
+    }
+    .totales-table td {
+        padding: 6px 8px;
+        font-size: 9.5pt;
+        border-bottom: 1px solid #e6e0d5;
+    }
+    .total-final-row td {
+        background-color: #faf7f0;
+        border-top: 2px solid #9e7b2f;
+        border-bottom: 2px solid #9e7b2f;
+        font-size: 11.2pt;
+        font-weight: bold;
+        color: #111111;
+        padding: 9px 8px;
+    }
+    .footer-box {
+        margin-top: 24px;
+        padding-top: 10px;
+        border-top: 1px solid #dcd6ca;
+        text-align: center;
+        font-size: 8.3pt;
+        color: #666666;
+    }
+</style>
+</head>
+<body>
+
+    <!-- ENCABEZADO DE EMPRESA Y FOLIO -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 58%;">
+                {% if empresa.logo_data_uri %}
+                    <img src="{{ empresa.logo_data_uri }}" alt="Logo" class="empresa-logo"><br>
+                {% endif %}
+                <div class="empresa-nombre">{{ empresa.nombre }}</div>
+                {% if empresa.rfc %}
+                    <div class="empresa-dato"><strong>RFC / ID Fiscal:</strong> {{ empresa.rfc }}</div>
+                {% endif %}
+                {% if empresa.direccion %}
+                    <div class="empresa-dato"><strong>Dirección:</strong> {{ empresa.direccion }}</div>
+                {% endif %}
+                {% if empresa.ciudad %}
+                    <div class="empresa-dato">{{ empresa.ciudad }}</div>
+                {% endif %}
+                {% if empresa.telefono or empresa.email %}
+                    <div class="empresa-dato">
+                        {% if empresa.telefono %}<strong>Tel:</strong> {{ empresa.telefono }}{% endif %}
+                        {% if empresa.telefono and empresa.email %} &nbsp;|&nbsp; {% endif %}
+                        {% if empresa.email %}<strong>Email:</strong> {{ empresa.email }}{% endif %}
+                    </div>
+                {% endif %}
+                {% if empresa.sitio_web %}
+                    <div class="empresa-dato">{{ empresa.sitio_web }}</div>
+                {% endif %}
+            </td>
+            <td class="folio-box" style="width: 42%;">
+                <div class="doc-titulo">Comprobante de Compra</div>
+                <div class="doc-folio">Folio #{{ venta_info.folio }}</div>
+                <div class="doc-meta">
+                    <strong>Fecha y hora:</strong>
+                    {% if venta_info.fecha %}
+                        {{ venta_info.fecha|date:"d/m/Y H:i" }}
+                    {% else %}
+                        {{ hoy|date:"d/m/Y" }}
+                    {% endif %}
+                </div>
+                <div class="doc-meta"><strong>Lugar de emisión:</strong> {{ venta_info.lugar }}</div>
+                <div class="doc-meta"><strong>Estado:</strong> {{ venta_info.estado }}</div>
+                <div class="doc-meta"><strong>Forma de pago:</strong> {{ venta_info.metodo_pago }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- DATOS DEL CLIENTE Y DETALLES DE LA OPERACIÓN -->
+    <table class="info-grid">
+        <tr>
+            <td class="info-card">
+                <div class="card-title">Datos del Cliente</div>
+                <div class="info-line"><span class="info-label">Nombre / Razón Social:</span> {{ cliente_info.nombre }}</div>
+                {% if cliente_info.rfc %}
+                    <div class="info-line"><span class="info-label">RFC:</span> {{ cliente_info.rfc }}</div>
+                {% endif %}
+                {% if cliente_info.telefono %}
+                    <div class="info-line"><span class="info-label">Teléfono:</span> {{ cliente_info.telefono }}</div>
+                {% endif %}
+                {% if cliente_info.email %}
+                    <div class="info-line"><span class="info-label">Correo:</span> {{ cliente_info.email }}</div>
+                {% endif %}
+                {% if cliente_info.direccion %}
+                    <div class="info-line"><span class="info-label">Dirección:</span> {{ cliente_info.direccion }}</div>
+                {% endif %}
+            </td>
+            <td class="info-spacer"></td>
+            <td class="info-card">
+                <div class="card-title">Resumen de la Operación</div>
+                <div class="info-line"><span class="info-label">Comprobante N°:</span> {{ venta_info.folio }}</div>
+                <div class="info-line"><span class="info-label">Cuándo:</span> {% if venta_info.fecha %}{{ venta_info.fecha|date:"d/m/Y H:i" }}{% else %}{{ hoy|date:"d/m/Y" }}{% endif %}</div>
+                <div class="info-line"><span class="info-label">Dónde:</span> {{ venta_info.lugar }}</div>
+                <div class="info-line"><span class="info-label">Artículos adquiridos:</span> {{ items_pdf|length }}</div>
+                <div class="info-line"><span class="info-label">Total pagado:</span> {{ empresa.moneda }}{{ venta_info.total|floatformat:2 }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- TABLA DE PRODUCTOS Y PRECIOS -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 6%;">#</th>
+                <th class="text-left" style="width: 44%;">Producto / Descripción</th>
+                <th class="text-center" style="width: 12%;">Cantidad</th>
+                <th class="text-right" style="width: 19%;">Precio Unitario</th>
+                <th class="text-right" style="width: 19%;">Importe</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items_pdf %}
+            <tr class="{% cycle '' 'row-alt' %}">
+                <td class="text-center">{{ item.num }}</td>
+                <td class="text-left">
+                    <strong>{{ item.nombre }}</strong>
+                    {% if item.sku or item.categoria %}
+                    <div class="prod-sub">
+                        {% if item.sku %}SKU: {{ item.sku }}{% endif %}
+                        {% if item.sku and item.categoria %} &bull; {% endif %}
+                        {% if item.categoria %}Categoría: {{ item.categoria }}{% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ item.cantidad }}</td>
+                <td class="text-right">{{ empresa.moneda }}{{ item.precio_unitario|floatformat:2 }}</td>
+                <td class="text-right"><strong>{{ empresa.moneda }}{{ item.subtotal|floatformat:2 }}</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No hay productos registrados en esta operación.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- TOTALES Y OBSERVACIONES -->
+    <table class="totales-wrap">
+        <tr>
+            <td class="notas-col">
+                {% if venta_info.notas %}
+                <div class="notas-box">
+                    <strong>Observaciones:</strong><br>
+                    {{ venta_info.notas }}
+                </div>
+                {% endif %}
+            </td>
+            <td class="totales-col">
+                <table class="totales-table">
+                    <tr>
+                        <td class="text-left">Subtotal:</td>
+                        <td class="text-right">{{ empresa.moneda }}{{ venta_info.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% if venta_info.descuento > 0 %}
+                    <tr>
+                        <td class="text-left">Descuento:</td>
+                        <td class="text-right">-{{ empresa.moneda }}{{ venta_info.descuento|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if venta_info.impuestos > 0 %}
+                    <tr>
+                        <td class="text-left">Impuestos / IVA:</td>
+                        <td class="text-right">{{ empresa.moneda }}{{ venta_info.impuestos|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="total-final-row">
+                        <td class="text-left">TOTAL:</td>
+                        <td class="text-right">{{ empresa.moneda }}{{ venta_info.total|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- PIE DEL COMPROBANTE -->
+    <div class="footer-box">
+        <div>{{ empresa.leyenda }}</div>
+        <div>Documento generado el {{ hoy|date:"d/m/Y" }} &mdash; {{ empresa.nombre }}</div>
+    </div>
+
+</body>
+</html>

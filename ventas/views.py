@@ -148,7 +148,9 @@ from .models import Venta as _Venta
 
 @_login_required
 def venta_pdf(request, venta_id: int) -> _HttpResponse:
+    import base64
     from datetime import date
+    from decimal import Decimal
     from io import BytesIO as _BytesIO
     from configuracion.models import ConfiguracionERP
 
@@ -160,10 +162,117 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
     )
 
     config = ConfiguracionERP.get_instance()
+
+    def _first_attr(obj, names, default=''):
+        if not obj:
+            return default
+        for name in names:
+            val = getattr(obj, name, None)
+            if callable(val):
+                try:
+                    val = val()
+                except Exception:
+                    val = None
+            if val not in (None, ''):
+                return val
+        return default
+
+    # Convertir logo de la empresa a Base64 para que se muestre tanto en xhtml2pdf como en WeasyPrint
+    logo_data_uri = ''
+    logo_field = getattr(config, 'logo', None)
+    if logo_field:
+        try:
+            with logo_field.open('rb') as f:
+                raw = f.read()
+            ext = str(getattr(logo_field, 'name', '')).lower().split('.')[-1]
+            mime = 'image/jpeg' if ext in ('jpg', 'jpeg') else ('image/webp' if ext == 'webp' else 'image/png')
+            logo_data_uri = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+        except Exception:
+            logo_data_uri = ''
+
+    empresa = {
+        'nombre': _first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], 'Dandelion Star'),
+        'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif']),
+        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal']),
+        'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais']),
+        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp']),
+        'email': _first_attr(config, ['email', 'correo', 'correo_electronico']),
+        'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web']),
+        'leyenda': _first_attr(
+            config,
+            ['pie_pagina', 'mensaje_ticket', 'leyenda', 'notas_factura'],
+            'Gracias por su compra. Este documento sirve como comprobante oficial de la operación.',
+        ),
+        'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '),
+        'logo_data_uri': logo_data_uri,
+    }
+
+    cliente_obj = getattr(venta, 'cliente', None)
+    cliente_info = {
+        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'Público en General'),
+        'telefono': _first_attr(cliente_obj, ['telefono', 'celular']),
+        'email': _first_attr(cliente_obj, ['email', 'correo']),
+        'direccion': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad']),
+        'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id']),
+    }
+
+    items_pdf = []
+    subtotal_calc = Decimal('0.00')
+    for idx, d in enumerate(venta.detalles.all(), start=1):
+        prod = getattr(d, 'producto', None)
+        cant = Decimal(str(getattr(d, 'cantidad', 1) or 1))
+        precio = Decimal(str(_first_attr(d, ['precio_unitario', 'precio'], '0.00')))
+        sub_attr = getattr(d, 'subtotal', None)
+        if callable(sub_attr):
+            sub_attr = sub_attr()
+        sub = Decimal(str(sub_attr)) if sub_attr not in (None, '') else (cant * precio)
+        subtotal_calc += sub
+
+        cat_obj = getattr(prod, 'categoria', None)
+        items_pdf.append({
+            'num': idx,
+            'nombre': _first_attr(prod, ['nombre', 'titulo'], f'Producto #{idx}'),
+            'sku': _first_attr(prod, ['sku', 'codigo', 'referencia']),
+            'categoria': _first_attr(cat_obj, ['nombre'], str(cat_obj) if cat_obj else ''),
+            'cantidad': getattr(d, 'cantidad', 1),
+            'precio_unitario': precio,
+            'subtotal': sub,
+        })
+
+    total_venta = getattr(venta, 'total', None)
+    if callable(total_venta):
+        total_venta = total_venta()
+    total_final = Decimal(str(total_venta)) if total_venta not in (None, '') else subtotal_calc
+
+    subtotal_venta = getattr(venta, 'subtotal', None)
+    if callable(subtotal_venta):
+        subtotal_venta = subtotal_venta()
+    subtotal_final = Decimal(str(subtotal_venta)) if subtotal_venta not in (None, '') else subtotal_calc
+
+    impuestos_final = Decimal(str(_first_attr(venta, ['iva', 'impuestos', 'impuesto'], '0.00')))
+    descuento_final = Decimal(str(_first_attr(venta, ['descuento'], '0.00')))
+
+    venta_info = {
+        'folio': f"{venta.pk:05d}",
+        'fecha': _first_attr(venta, ['fecha', 'fecha_creacion', 'created_at']),
+        'estado': _first_attr(venta, ['get_estado_display', 'estado', 'estatus'], 'Completada'),
+        'metodo_pago': _first_attr(venta, ['get_metodo_pago_display', 'metodo_pago', 'forma_pago'], 'Contado / Registrado'),
+        'lugar': _first_attr(venta, ['sucursal', 'ubicacion', 'lugar']) or empresa['direccion'] or empresa['ciudad'] or 'Matriz / Punto de Venta',
+        'notas': _first_attr(venta, ['notas', 'observaciones', 'comentarios']),
+        'subtotal': subtotal_final,
+        'impuestos': impuestos_final,
+        'descuento': descuento_final,
+        'total': total_final,
+    }
+
     context = {
         'venta': venta,
         'config': config,
         'hoy': date.today(),
+        'empresa': empresa,
+        'cliente_info': cliente_info,
+        'items_pdf': items_pdf,
+        'venta_info': venta_info,
     }
 
     html_string = _render_to_string(
@@ -192,6 +301,6 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     response = _HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = (
-        f'attachment; filename="factura_{venta.pk:05d}.pdf"'
+        f'attachment; filename="comprobante_compra_{venta.pk:05d}.pdf"'
     )
     return response
