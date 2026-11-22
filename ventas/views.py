@@ -225,7 +225,7 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], '—'),
         'email': _first_attr(config, ['email', 'correo', 'correo_electronico']),
         'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web'], 'erp-dandelion-star.onrender.com'),
-        'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '),
+        'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '$'),
         'logo_data_uri': logo_data_uri,
     }
 
