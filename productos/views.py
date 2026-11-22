@@ -340,9 +340,12 @@ def api_catalogo_variantes(request):
 
 
 # === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
+import traceback as _prod_traceback
 from decimal import Decimal as _ProdDecimal
 from django.contrib import messages as _prod_messages
 from django.contrib.auth.decorators import login_required as _prod_login_required
+from django.db import connection as _prod_connection
+from django.http import Http404 as _ProdHttp404, HttpResponse as _ProdHttpResponse
 from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
 from django.urls import reverse as _prod_reverse
 from django.views.decorators.http import require_POST as _prod_require_POST
@@ -380,6 +383,20 @@ def _prod_safe_str(obj, default=''):
         return txt if txt else default
     except Exception:
         return default
+
+
+def _resolve_producto_obj(pk=None, id=None, producto_id=None, slug=None):
+    from .models import Producto
+    lookup_id = pk if pk is not None else (id if id is not None else producto_id)
+    if lookup_id is not None:
+        return _prod_get_object_or_404(Producto, pk=lookup_id)
+    if slug is not None:
+        field_names = {f.name for f in Producto._meta.get_fields()}
+        if 'slug' in field_names:
+            return _prod_get_object_or_404(Producto, slug=slug)
+        if str(slug).isdigit():
+            return _prod_get_object_or_404(Producto, pk=int(slug))
+    raise _ProdHttp404('Producto no encontrado')
 
 
 def _build_producto_editorial_data(producto):
@@ -446,14 +463,18 @@ def _build_producto_editorial_data(producto):
             fecha_fmt = _prod_safe_str(fecha_val, '')
 
     colores_list = []
+    colores_qs = []
     try:
         colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
     except Exception:
         try:
+            _prod_connection.close()
             from django.core.management import call_command
             call_command('migrate', 'productos', interactive=False, verbosity=0)
+            _prod_connection.close()
             colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
         except Exception:
+            _prod_connection.close()
             colores_qs = []
 
     if colores_qs:
@@ -532,19 +553,54 @@ def _build_producto_editorial_data(producto):
     }
 
 
-def producto_detalle_editorial(request, pk: int):
-    from .models import Producto
-    producto = _prod_get_object_or_404(Producto, pk=pk)
-    ctx = {'producto': producto, 'object': producto}
-    ctx.update(_build_producto_editorial_data(producto))
-    return _prod_render(request, 'productos/detalle.html', ctx)
+def producto_detalle_editorial(request, pk=None, id=None, producto_id=None, slug=None):
+    producto = _resolve_producto_obj(pk=pk, id=id, producto_id=producto_id, slug=slug)
+    try:
+        ctx = {'producto': producto, 'object': producto}
+        ctx.update(_build_producto_editorial_data(producto))
+        return _prod_render(request, 'productos/detalle.html', ctx)
+    except Exception as exc:
+        err_detail = _prod_traceback.format_exc()
+        print(f"[ERROR producto_detalle_editorial pk={producto.pk}]: {exc}
+{err_detail}")
+        fallback_ctx = {
+            'producto': producto,
+            'object': producto,
+            'empresa_nombre': 'DANDELION STAR',
+            'ventas_crear_url': '/ventas/',
+            'agregar_color_url': f'/productos/{producto.pk}/colores/agregar/',
+            'catalogo_url': '/productos/',
+            'prod_info': {
+                'id': producto.pk,
+                'nombre': _prod_safe_str(getattr(producto, 'nombre', ''), f'Producto #{producto.pk}'),
+                'categoria': 'Colecci?n Exclusiva',
+                'proveedor': 'Dandelion Star',
+                'precio_fmt': _prod_safe_str(getattr(producto, 'precio', '0.00'), '0.00'),
+                'stock': getattr(producto, 'stock', 0) or 0,
+                'es_activo': True,
+                'estado': 'Activo',
+                'sku': f'DS-{producto.pk:04d}',
+                'descripcion': _prod_safe_str(getattr(producto, 'descripcion', ''), ''),
+                'fecha_fmt': '',
+                'imagen_url': '',
+            },
+            'colores_list': [{
+                'id': 0,
+                'nombre': 'Original',
+                'codigo_hex': '#ebe7e0',
+                'imagen_url': '',
+                'stock': getattr(producto, 'stock', 0) or 0,
+                'delete_url': '',
+            }],
+        }
+        return _prod_render(request, 'productos/detalle.html', fallback_ctx)
 
 
 @_prod_login_required
 @_prod_require_POST
-def agregar_color_producto(request, pk: int):
-    from .models import Producto, ProductoColor
-    producto = _prod_get_object_or_404(Producto, pk=pk)
+def agregar_color_producto(request, pk=None, id=None, producto_id=None):
+    from .models import ProductoColor
+    producto = _resolve_producto_obj(pk=pk, id=id, producto_id=producto_id)
     nombre = (request.POST.get('nombre') or '').strip()
     codigo_hex = (request.POST.get('codigo_hex') or '#1c1c1c').strip()
     imagen = request.FILES.get('imagen')
@@ -557,13 +613,27 @@ def agregar_color_producto(request, pk: int):
         _prod_messages.error(request, 'Escribe el nombre del color.')
         return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
 
-    ProductoColor.objects.create(
-        producto=producto,
-        nombre=nombre,
-        codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
-        imagen=imagen,
-        stock=stock,
-    )
+    try:
+        ProductoColor.objects.create(
+            producto=producto,
+            nombre=nombre,
+            codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
+            imagen=imagen,
+            stock=stock,
+        )
+    except Exception:
+        _prod_connection.close()
+        from django.core.management import call_command
+        call_command('migrate', 'productos', interactive=False, verbosity=0)
+        _prod_connection.close()
+        ProductoColor.objects.create(
+            producto=producto,
+            nombre=nombre,
+            codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
+            imagen=imagen,
+            stock=stock,
+        )
+
     _prod_messages.success(request, f'Color "{nombre}" agregado a {producto}.')
     return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
 

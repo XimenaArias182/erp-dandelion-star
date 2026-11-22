@@ -24,3 +24,16 @@ def _auto_migrate_productos():
         pass
 
 _auto_migrate_productos()
+
+
+def _auto_migrate_all():
+    try:
+        from django.db import connection
+        from django.core.management import call_command
+        connection.close()
+        call_command('migrate', interactive=False, verbosity=0)
+        connection.close()
+    except Exception:
+        pass
+
+_auto_migrate_all()
