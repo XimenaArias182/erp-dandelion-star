@@ -17,11 +17,11 @@
     }
     table {
         width: 100%;
-        border-collapse: separate;
+        border-collapse: collapse;
         border-spacing: 0;
     }
 
-    /* CABECERA SUPERIOR: LOGO REDONDO DORADO + NOMBRE EN CALIGRAF?A */
+    /* CABECERA SUPERIOR: LOGO REDONDO DORADO + NOMBRE EN CALIGRAF?A NEGRA */
     .top-brand-table {
         margin-bottom: 14px;
     }
@@ -38,9 +38,9 @@
         padding: 2px 6px;
     }
     .brand-script-img {
-        height: 52pt;
+        height: 54pt;
         width: auto;
-        max-width: 315pt;
+        max-width: 320pt;
         margin: 0 auto;
     }
     .brand-cursive-title {
@@ -49,37 +49,24 @@
         font-weight: normal;
         font-size: 34pt;
         line-height: 1.08;
-        color: #1c1c1c;
+        color: #111111;
         margin: 0;
     }
     .brand-gold-rule {
         width: 78%;
-        margin: 5px auto 7px auto;
+        margin: 6px auto 0 auto;
         border-bottom: 1.5pt solid #b8933d;
     }
-    .brand-subtitle {
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-size: 10.5pt;
-        font-weight: normal;
-        letter-spacing: 4.5px;
-        text-transform: uppercase;
-        color: #222222;
-        margin: 0;
-    }
 
-    /* CUADR?CULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
+    /* CUADR?CULA DE CLIENTE Y FECHA CON BORDES S?LIDOS UNIFICADOS */
     .meta-grid {
         margin-bottom: 14px;
     }
     .meta-grid td {
+        border: 1pt solid #222222;
         padding: 6px 9px;
         font-size: 9.5pt;
         vertical-align: middle;
-    }
-    .cell-top-left {
-        border-top: 1pt solid #222222;
-        border-left: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
     }
     .fecha-header {
         background-color: #222222;
@@ -90,34 +77,11 @@
         text-transform: uppercase;
         border: 1pt solid #222222;
     }
-    .cell-mid-left {
-        border-left: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-    }
     .fecha-cell {
         text-align: center;
         font-weight: bold;
         font-size: 10pt;
         width: 9.5%;
-        border-left: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-    }
-    .fecha-cell-last {
-        border-right: 1pt solid #222222;
-    }
-    .cell-full {
-        border-left: 1pt solid #222222;
-        border-right: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-    }
-    .cell-bot-left {
-        border-left: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
-    }
-    .cell-bot-right {
-        border-left: 1pt solid #222222;
-        border-right: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
     }
     .meta-label {
         letter-spacing: 1px;
@@ -129,8 +93,8 @@
         color: #111111;
     }
 
-    /* TABLA PRINCIPAL DE PRODUCTOS CON ENCABEZADO S?LIDO SIN RAYAS BLANCAS */
-    .items-grid thead tr {
+    /* TABLA PRINCIPAL DE PRODUCTOS CON FILA OSCURA CONTINUA */
+    .dark-header-row {
         background-color: #222222;
     }
     .items-grid th {
@@ -145,8 +109,7 @@
         text-align: center;
     }
     .items-grid td {
-        border-bottom: 1pt solid #222222;
-        border-right: 1pt solid #222222;
+        border: 1pt solid #222222;
         padding: 6px 8px;
         font-size: 9.5pt;
         line-height: 1.35;
@@ -155,7 +118,6 @@
     .col-cant {
         width: 14%;
         text-align: center;
-        border-left: 1pt solid #222222;
     }
     .col-desc { width: 46%; text-align: left; }
     .col-unit { width: 20%; text-align: right; }
@@ -174,7 +136,7 @@
     /* BLOQUE INFERIOR INTEGRADO */
     .empresa-firma-box {
         padding: 12px 14px 6px 18px;
-        border: none;
+        border: none !important;
         vertical-align: top;
     }
     .empresa-firma-script {
@@ -212,8 +174,7 @@
         color: #111111;
         padding: 6px 9px;
         font-size: 9.5pt;
-        border-right: 1pt solid #222222;
-        border-bottom: 1pt solid #222222;
+        border: 1pt solid #222222;
     }
 
     /* PIE DE P?GINA EN 3 COLUMNAS */
@@ -243,8 +204,8 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO: LOGO REDONDO DORADO + NOMBRE DE EMPRESA EN CALIGRAF?A -->
-    <table class="top-brand-table">
+    <!-- ENCABEZADO: LOGO REDONDO DORADO + NOMBRE DE EMPRESA EN CALIGRAF?A NEGRA -->
+    <table class="top-brand-table" cellspacing="0" cellpadding="0">
         <tr>
             <td style="width: 22%; text-align: center;">
                 {% if empresa.logo_data_uri %}
@@ -270,36 +231,36 @@
     </table>
 
     <!-- CUADR?CULA DE FACTURA NO., FECHA Y CLIENTE -->
-    <table class="meta-grid">
+    <table class="meta-grid" cellspacing="0" cellpadding="0">
         <tr>
-            <td class="cell-top-left" style="width: 71.5%;">
+            <td style="width: 71.5%;">
                 <span class="meta-label">FACTURA NO.:</span>
                 <span class="meta-val">#{{ venta_info.folio }}</span>
             </td>
             <td colspan="3" class="fecha-header">FECHA</td>
         </tr>
         <tr>
-            <td class="cell-mid-left">
+            <td>
                 <span class="meta-label">CLIENTE:</span>
                 <span class="meta-val">{{ cliente_info.nombre }}</span>
                 {% if cliente_info.rfc %} &nbsp;({{ cliente_info.rfc }}){% endif %}
             </td>
             <td class="fecha-cell">{{ venta_info.dia }}</td>
             <td class="fecha-cell">{{ venta_info.mes }}</td>
-            <td class="fecha-cell fecha-cell-last">{{ venta_info.anio }}</td>
+            <td class="fecha-cell">{{ venta_info.anio }}</td>
         </tr>
         <tr>
-            <td colspan="4" class="cell-full">
+            <td colspan="4">
                 <span class="meta-label">DOMICILIO:</span>
                 <span>{{ cliente_info.domicilio }}</span>
             </td>
         </tr>
         <tr>
-            <td class="cell-bot-left">
+            <td>
                 <span class="meta-label">E-MAIL:</span>
                 <span>{{ cliente_info.email }}</span>
             </td>
-            <td colspan="3" class="cell-bot-right">
+            <td colspan="3">
                 <span class="meta-label">TEL.:</span>
                 <span>{{ cliente_info.telefono }}</span>
             </td>
@@ -307,9 +268,9 @@
     </table>
 
     <!-- TABLA DE PRODUCTOS VENDIDOS + TOTALES -->
-    <table class="items-grid">
+    <table class="items-grid" cellspacing="0" cellpadding="0">
         <thead>
-            <tr>
+            <tr class="dark-header-row">
                 <th class="col-cant">CANTIDAD</th>
                 <th class="col-desc">DESCRIPCI&Oacute;N</th>
                 <th class="col-unit">VALOR UNITARIO</th>
@@ -377,7 +338,7 @@
     </table>
 
     <!-- PIE DE P?GINA EN 3 COLUMNAS -->
-    <table class="footer-table">
+    <table class="footer-table" cellspacing="0" cellpadding="0">
         <tr class="footer-head">
             <td>DIRECCI&Oacute;N</td>
             <td>TEL&Eacute;FONO</td>
