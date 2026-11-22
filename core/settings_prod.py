@@ -1,4 +1,4 @@
-﻿# core/settings_prod.py
+# core/settings_prod.py
 """Configuración de producción — Render.com (versión final W03).
 
 Hereda settings.py y sobreescribe todo lo necesario para producción.
@@ -83,7 +83,7 @@ SECURE_REFERRER_POLICY         = 'same-origin'
 
 # ── ARCHIVOS ESTÁTICOS ─────────────────────────────────────────────────────
 # WhiteNoise ya configurado en settings.py; solo confirmar almacenamiento
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # ── LOGGING: solo WARNING y superiores en producción ──────────────────────
 LOGGING = {
