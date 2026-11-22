@@ -6,70 +6,93 @@
 <style>
     @page {
         size: letter;
-        margin: 1.3cm 1.5cm;
+        margin: 1.2cm 1.4cm;
     }
     body {
         font-family: "Times New Roman", Times, Georgia, serif;
         font-size: 10pt;
-        color: #1f1f1f;
+        color: #1c1c1c;
         margin: 0;
         padding: 0;
     }
     table {
         width: 100%;
         border-collapse: collapse;
+        border-spacing: 0;
     }
 
-    /* CABECERA SUPERIOR: LOGO + TÍTULO CALIGRÁFICO */
+    /* CABECERA SUPERIOR: LOGO REDONDO CON BRILLO DORADO + TÍTULO ESTILO PALACIO DE HIERRO */
     .top-brand-table {
-        margin-bottom: 10px;
+        margin-bottom: 14px;
     }
     .top-brand-table td {
         vertical-align: middle;
+        border: none;
     }
     .brand-logo {
-        max-height: 58px;
-        max-width: 150px;
+        width: 104px;
+        height: 104px;
     }
     .brand-header-name {
-        font-size: 11pt;
-        font-weight: bold;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: #262626;
-        margin-top: 3px;
-    }
-    .titulo-factura {
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-style: italic;
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+        font-size: 9.5pt;
         font-weight: normal;
-        font-size: 40pt;
-        line-height: 1;
-        color: #262626;
-        text-align: center;
-        margin: 0;
-    }
-    .subtitulo-remision {
-        font-size: 12.5pt;
-        letter-spacing: 2.2px;
+        letter-spacing: 2.6px;
         text-transform: uppercase;
-        text-align: center;
-        color: #262626;
-        margin: 4px 0 14px 0;
+        color: #1c1c1c;
+        margin-top: 4px;
     }
 
-    /* CUADRÍCULA DE CLIENTE Y FECHA */
+    /* BLOQUE DE TÍTULO EDITORIAL DE LUJO (ESTILO EL PALACIO DE HIERRO) */
+    .ph-title-box {
+        text-align: center;
+        padding: 4px 10px;
+    }
+    .ph-kicker {
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+        font-size: 7.8pt;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: #9e7b2f;
+        margin-bottom: 5px;
+    }
+    .ph-main-title {
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+        font-size: 31pt;
+        font-weight: normal;
+        letter-spacing: 7px;
+        text-transform: uppercase;
+        line-height: 1.05;
+        color: #181818;
+        margin: 0;
+    }
+    .ph-gold-rule {
+        width: 78%;
+        margin: 7px auto;
+        border-bottom: 1.5px solid #b8933d;
+    }
+    .ph-subtitle {
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+        font-size: 10.5pt;
+        font-weight: normal;
+        letter-spacing: 4.5px;
+        text-transform: uppercase;
+        color: #262626;
+        margin: 0;
+    }
+
+    /* CUADRÍCULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
     .meta-grid {
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
     .meta-grid td {
-        border: 1px solid #262626;
+        border: 1px solid #222222;
         padding: 6px 9px;
-        font-size: 9.3pt;
+        font-size: 9.5pt;
         vertical-align: middle;
     }
     .meta-label {
-        letter-spacing: 0.6px;
+        letter-spacing: 1px;
         text-transform: uppercase;
         color: #222222;
     }
@@ -78,39 +101,50 @@
         color: #111111;
     }
     .fecha-header {
-        background-color: #262626;
+        background-color: #222222;
         color: #ffffff !important;
         text-align: center;
         font-size: 9.2pt;
-        letter-spacing: 1.2px;
+        letter-spacing: 2px;
         text-transform: uppercase;
+        border: 1px solid #222222;
     }
     .fecha-cell {
         text-align: center;
         font-weight: bold;
-        font-size: 9.8pt;
+        font-size: 10pt;
         width: 9.5%;
     }
 
-    /* TABLA PRINCIPAL DE PRODUCTOS */
+    /* TABLA PRINCIPAL DE PRODUCTOS CON ENCABEZADO SÓLIDO SIN RAYITAS BLANCAS */
+    .items-grid thead tr {
+        background-color: #222222;
+    }
     .items-grid th {
-        background-color: #262626;
+        background-color: #222222;
         color: #ffffff;
-        border: 1px solid #262626;
-        padding: 7px 6px;
+        border-top: 1px solid #222222;
+        border-bottom: 1px solid #222222;
+        border-left: none;
+        border-right: none;
+        padding: 8px 6px;
         font-size: 9pt;
         font-weight: normal;
-        letter-spacing: 0.9px;
+        letter-spacing: 1.4px;
         text-transform: uppercase;
         text-align: center;
     }
+    .items-grid th.first-col {
+        border-left: 1px solid #222222;
+    }
+    .items-grid th.last-col {
+        border-right: 1px solid #222222;
+    }
     .items-grid td {
-        border-left: 1px solid #262626;
-        border-right: 1px solid #262626;
-        border-bottom: 1px solid #262626;
-        padding: 5px 8px;
+        border: 1px solid #222222;
+        padding: 6px 8px;
         font-size: 9.5pt;
-        height: 18px;
+        line-height: 1.35;
         vertical-align: middle;
     }
     .col-cant { width: 14%; text-align: center; }
@@ -118,67 +152,83 @@
     .col-unit { width: 20%; text-align: right; }
     .col-imp  { width: 20%; text-align: right; }
 
+    .prod-name {
+        font-size: 9.5pt;
+        font-weight: bold;
+        color: #181818;
+    }
     .prod-extra {
-        font-size: 8pt;
+        font-size: 8.5pt;
         color: #555555;
     }
 
-    /* BLOQUE DE TOTALES Y NOMBRE DE EMPRESA */
+    /* BLOQUE INFERIOR DE EMPRESA Y TOTALES SIN RAYITAS BLANCAS */
     .bottom-summary-table td {
         vertical-align: top;
     }
     .empresa-firma-box {
-        padding: 12px 14px 6px 26px;
+        padding: 12px 14px 6px 18px;
+        border: none;
     }
     .empresa-firma-nombre {
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
         font-size: 10.5pt;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        color: #222222;
+        color: #181818;
         font-weight: bold;
         margin-bottom: 4px;
     }
     .empresa-firma-detalle {
-        font-size: 8.6pt;
+        font-size: 8.8pt;
         color: #444444;
-        line-height: 1.4;
+        line-height: 1.45;
     }
     .totales-box {
         width: 40%;
+        border: none;
+        padding: 0;
     }
     .totales-box td {
-        border-left: 1px solid #262626;
-        border-right: 1px solid #262626;
-        border-bottom: 1px solid #262626;
-        padding: 6px 8px;
+        padding: 6px 9px;
         font-size: 9.5pt;
     }
     .tot-label {
-        background-color: #262626;
+        background-color: #222222;
         color: #ffffff !important;
         text-align: center;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
         text-transform: uppercase;
         width: 50%;
+        border-left: 1px solid #222222;
+        border-right: 1px solid #222222;
+        border-bottom: 1px solid #222222;
+        border-top: none;
     }
     .tot-val {
         text-align: right;
         font-weight: bold;
         color: #111111;
         width: 50%;
+        border-right: 1px solid #222222;
+        border-bottom: 1px solid #222222;
+        border-left: 1px solid #222222;
+        border-top: none;
     }
 
-    /* PIE DE PÁGINA DE 3 COLUMNAS */
+    /* PIE DE PÁGINA EN 3 COLUMNAS ESTILO EDITORIAL */
     .footer-table {
-        margin-top: 26px;
+        margin-top: 22px;
     }
     .footer-head td {
         text-align: center;
-        font-style: italic;
-        font-size: 15pt;
-        color: #262626;
-        padding-bottom: 4px;
-        border-bottom: 1px solid #262626;
+        font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+        font-size: 10.5pt;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #1c1c1c;
+        padding-bottom: 5px;
+        border-bottom: 1.2px solid #b8933d;
         width: 33.33%;
     }
     .footer-body td {
@@ -186,27 +236,31 @@
         font-size: 8.8pt;
         color: #262626;
         padding-top: 6px;
-        line-height: 1.35;
+        line-height: 1.4;
         vertical-align: top;
     }
 </style>
 </head>
 <body>
 
-    <!-- ENCABEZADO PERSONALIZADO CON LOGO, EMPRESA Y TÍTULO -->
+    <!-- ENCABEZADO: LOGO REDONDO DORADO + TÍTULO ESTILO EL PALACIO DE HIERRO -->
     <table class="top-brand-table">
         <tr>
-            <td style="width: 26%; text-align: left;">
+            <td style="width: 24%; text-align: center;">
                 {% if empresa.logo_data_uri %}
-                    <img src="{{ empresa.logo_data_uri }}" alt="Logo" class="brand-logo">
+                    <img src="{{ empresa.logo_data_uri }}" alt="Logo" class="brand-logo"><br>
                 {% endif %}
                 <div class="brand-header-name">{{ empresa.nombre }}</div>
             </td>
-            <td style="width: 48%; text-align: center;">
-                <div class="titulo-factura">Factura</div>
-                <div class="subtitulo-remision">NOTA DE REMISIÓN</div>
+            <td style="width: 54%;">
+                <div class="ph-title-box">
+                    <div class="ph-kicker">{{ empresa.nombre }}</div>
+                    <div class="ph-main-title">FACTURA</div>
+                    <div class="ph-gold-rule"></div>
+                    <div class="ph-subtitle">NOTA DE REMISIÓN</div>
+                </div>
             </td>
-            <td style="width: 26%; text-align: right; font-size: 8.5pt; color: #444444;">
+            <td style="width: 22%; text-align: right; font-size: 8.6pt; color: #444444; line-height: 1.5;">
                 {% if empresa.rfc %}<div><strong>RFC:</strong> {{ empresa.rfc }}</div>{% endif %}
                 <div><strong>Hora:</strong> {{ venta_info.hora }} hrs</div>
                 <div><strong>Pago:</strong> {{ venta_info.metodo_pago }}</div>
@@ -255,10 +309,10 @@
     <table class="items-grid">
         <thead>
             <tr>
-                <th class="col-cant">CANTIDAD</th>
+                <th class="col-cant first-col">CANTIDAD</th>
                 <th class="col-desc">DESCRIPCIÓN</th>
-                <th class="col-unit">VALOR<br>UNITARIO</th>
-                <th class="col-imp">IMPORTE</th>
+                <th class="col-unit">VALOR UNITARIO</th>
+                <th class="col-imp last-col">IMPORTE</th>
             </tr>
         </thead>
         <tbody>
@@ -266,7 +320,7 @@
             <tr>
                 <td class="col-cant">{{ item.cantidad }}</td>
                 <td class="col-desc">
-                    <strong>{{ item.nombre }}</strong>
+                    <span class="prod-name">{{ item.nombre }}</span>
                     {% if item.sku or item.categoria %}
                         <span class="prod-extra">
                             ({% if item.sku %}SKU: {{ item.sku }}{% endif %}{% if item.sku and item.categoria %} - {% endif %}{% if item.categoria %}{{ item.categoria }}{% endif %})

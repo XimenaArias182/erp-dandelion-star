@@ -178,13 +178,72 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                 return val
         return default
 
-    def _to_data_uri(raw_bytes: bytes, filename: str) -> str:
-        ext = str(filename).lower().split('.')[-1]
-        mime = (
-            'image/jpeg' if ext in ('jpg', 'jpeg')
-            else ('image/webp' if ext == 'webp' else 'image/png')
-        )
-        return f"data:{mime};base64,{base64.b64encode(raw_bytes).decode('ascii')}"
+    def _make_round_gold_logo(raw_bytes: bytes) -> str:
+        try:
+            from PIL import Image, ImageDraw, ImageFilter
+            resampling = getattr(Image, 'Resampling', Image).LANCZOS
+
+            im = Image.open(_BytesIO(raw_bytes)).convert('RGBA')
+            w, h = im.size
+            side = min(w, h)
+            left = (w - side) // 2
+            top = (h - side) // 2
+            im = im.crop((left, top, left + side, top + side))
+
+            inner_size = 220
+            canvas_size = 276
+            center = canvas_size // 2
+            im = im.resize((inner_size, inner_size), resampling)
+
+            # Máscara circular suavizada (4x supersampling)
+            scale = 4
+            big_mask = Image.new('L', (inner_size * scale, inner_size * scale), 0)
+            ImageDraw.Draw(big_mask).ellipse(
+                (0, 0, inner_size * scale - 1, inner_size * scale - 1),
+                fill=255,
+            )
+            circle_mask = big_mask.resize((inner_size, inner_size), resampling)
+
+            # Resplandor dorado exterior
+            glow_layer = Image.new('RGBA', (canvas_size, canvas_size), (0, 0, 0, 0))
+            glow_draw = ImageDraw.Draw(glow_layer)
+            r_outer = inner_size // 2 + 13
+            r_mid = inner_size // 2 + 7
+            glow_draw.ellipse(
+                (center - r_outer, center - r_outer, center + r_outer, center + r_outer),
+                fill=(212, 175, 55, 165),
+            )
+            glow_draw.ellipse(
+                (center - r_mid, center - r_mid, center + r_mid, center + r_mid),
+                fill=(246, 220, 130, 225),
+            )
+            glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=8))
+
+            # Aro metálico dorado alrededor del logo
+            ring_layer = Image.new('RGBA', (canvas_size * scale, canvas_size * scale), (0, 0, 0, 0))
+            ring_draw = ImageDraw.Draw(ring_layer)
+            c_big = center * scale
+            r_gold = (inner_size // 2 + 4) * scale
+            r_inner_gold = (inner_size // 2) * scale
+            ring_draw.ellipse(
+                (c_big - r_gold, c_big - r_gold, c_big + r_gold, c_big + r_gold),
+                fill=(198, 156, 58, 255),
+            )
+            ring_draw.ellipse(
+                (c_big - r_inner_gold, c_big - r_inner_gold, c_big + r_inner_gold, c_big + r_inner_gold),
+                fill=(245, 222, 145, 255),
+            )
+            ring_smooth = ring_layer.resize((canvas_size, canvas_size), resampling)
+
+            final_img = Image.alpha_composite(glow_layer, ring_smooth)
+            offset = (canvas_size - inner_size) // 2
+            final_img.paste(im, (offset, offset), circle_mask)
+
+            out = _BytesIO()
+            final_img.save(out, format='PNG')
+            return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
+        except Exception:
+            return f"data:image/png;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
 
     # Buscar logo en ConfiguracionERP o en archivos estáticos del proyecto
     logo_data_uri = ''
@@ -193,7 +252,7 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         if logo_field:
             try:
                 with logo_field.open('rb') as f:
-                    logo_data_uri = _to_data_uri(f.read(), getattr(logo_field, 'name', 'logo.png'))
+                    logo_data_uri = _make_round_gold_logo(f.read())
                 if logo_data_uri:
                     break
             except Exception:
@@ -212,13 +271,13 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                 ]
                 if matches:
                     try:
-                        logo_data_uri = _to_data_uri(matches[0].read_bytes(), matches[0].name)
+                        logo_data_uri = _make_round_gold_logo(matches[0].read_bytes())
                         break
                     except Exception:
                         pass
 
     empresa = {
-        'nombre': _first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], 'Dandelion Star'),
+        'nombre': _first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], 'DANDELION STAR'),
         'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif']),
         'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], 'Celaya, Guanajuato, México'),
         'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais']),
@@ -261,8 +320,7 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             'subtotal': sub,
         })
 
-    # Rellenar filas vacías hasta completar 9 renglones como en el formato de Nota de Remisión
-    min_rows = 9
+    min_rows = 8
     empty_rows = range(max(0, min_rows - len(items_pdf)))
 
     total_venta = getattr(venta, 'total', None)
