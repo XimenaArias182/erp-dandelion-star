@@ -1,4 +1,4 @@
-﻿# ventas/views.py
+# ventas/views.py
 """Vistas de la app ventas — W07.
 
 Lectura: VentaListView y VentaDetailView.
@@ -17,43 +17,69 @@ from django.views.generic import DetailView, ListView
 
 from .models import Venta
 
+from django.db import transaction as _transaction
+from django.forms import inlineformset_factory as _inlineformset_factory
+from django.urls import reverse as _reverse
+
+DetalleVentaFormSet = _inlineformset_factory(
+    Venta,
+    DetalleVenta,
+    form=DetalleVentaForm,
+    extra=1,
+    can_delete=True,
+)
+
+
 def crear_venta(request):
-    """Crea un encabezado de venta con una línea de detalle.
-
-    GET  → muestra los dos formularios vacíos.
-    POST → valida ambos, guarda si correctos, muestra errores si no.
-
-    Protección: redirige a login si no autenticado.
-    Nota: para múltiples líneas usar formsets (implementar en Espiral 5).
-    """
+    """Crea un encabezado de venta con uno o más productos."""
     if not request.user.is_authenticated:
-        return redirect(
-            f"{settings.LOGIN_URL}?next={request.path}"
-        )
+        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
 
-    venta_form   = VentaForm(request.POST or None)
-    detalle_form = DetalleVentaForm(request.POST or None)
+    venta_form = VentaForm(request.POST or None)
+    formset = DetalleVentaFormSet(request.POST or None, prefix='detalles')
 
     if request.method == 'POST':
-        if venta_form.is_valid() and detalle_form.is_valid():
-            venta          = venta_form.save()
-            detalle        = detalle_form.save(commit=False)
-            detalle.venta  = venta
-            # precio_unitario se auto-captura en save() si es None
-            detalle.save()
-            messages.success(
-                request,
-                f'Venta #{venta.pk} registrada. '
-                f'Total: ${venta.total:.2f}'
-            )
-            from django.urls import reverse as _reverse
-            return redirect(f"{_reverse('ventas:detalle', args=[venta.pk])}?comprobante=1")
+        if 'detalles-TOTAL_FORMS' in request.POST:
+            if venta_form.is_valid() and formset.is_valid():
+                lineas_validas = [
+                    f for f in formset.forms
+                    if f.cleaned_data and not f.cleaned_data.get('DELETE', False)
+                ]
+                if not lineas_validas:
+                    formset._non_form_errors = formset.error_class(
+                        ['Agrega al menos un producto a la venta.']
+                    )
+                else:
+                    with _transaction.atomic():
+                        venta = venta_form.save()
+                        for f in lineas_validas:
+                            detalle = f.save(commit=False)
+                            detalle.venta = venta
+                            detalle.save()
+                    messages.success(
+                        request,
+                        f'Venta #{venta.pk} registrada. Total: ${venta.total:.2f}'
+                    )
+                    return redirect(f"{_reverse('ventas:detalle', args=[venta.pk])}?comprobante=1")
+        else:
+            detalle_form = DetalleVentaForm(request.POST)
+            if venta_form.is_valid() and detalle_form.is_valid():
+                with _transaction.atomic():
+                    venta = venta_form.save()
+                    detalle = detalle_form.save(commit=False)
+                    detalle.venta = venta
+                    detalle.save()
+                messages.success(
+                    request,
+                    f'Venta #{venta.pk} registrada. Total: ${venta.total:.2f}'
+                )
+                return redirect(f"{_reverse('ventas:detalle', args=[venta.pk])}?comprobante=1")
 
     return render(request, 'ventas/crear.html', {
-        'venta_form':   venta_form,
-        'detalle_form': detalle_form,
+        'venta_form': venta_form,
+        'formset': formset,
+        'detalle_form': DetalleVentaForm(),
     })
-
 
 class VentaDeleteView(LoginRequiredMixin, DeleteView):
     """Confirmación y borrado de una venta (y sus detalles en cascada)."""

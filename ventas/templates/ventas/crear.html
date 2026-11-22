@@ -2,7 +2,7 @@
 {% block content %}
 <style>
     .ds-venta-wrap {
-        max-width: 820px;
+        max-width: 860px;
         margin: 2rem auto;
         padding: 2.2rem 2.5rem;
         background: #ffffff;
@@ -36,9 +36,9 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: #9e7b2f;
-        margin: 1.5rem 0 1rem;
+        margin: 1.6rem 0 1rem;
     }
-    .ds-venta-field { margin-bottom: 1.2rem; }
+    .ds-venta-field { margin-bottom: 1rem; }
     .ds-venta-field label {
         display: block;
         font-size: 0.75rem;
@@ -46,7 +46,7 @@
         letter-spacing: 0.06em;
         text-transform: uppercase;
         color: #333;
-        margin-bottom: 0.45rem;
+        margin-bottom: 0.4rem;
     }
     .ds-venta-field input,
     .ds-venta-field select,
@@ -65,6 +65,58 @@
         outline: none;
         border-color: #9e7b2f;
     }
+    .ds-producto-card {
+        border: 1px solid #e6e1d8;
+        background: #fcfbf9;
+        border-radius: 6px;
+        padding: 1.1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .ds-producto-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #ece8e1;
+    }
+    .ds-producto-num {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #555;
+    }
+    .ds-btn-remove {
+        background: transparent;
+        border: 1px solid #e0b4b4;
+        color: #a62626;
+        padding: 0.25rem 0.65rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+    .ds-btn-remove:hover { background: #fdf2f2; }
+    .ds-producto-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.9rem;
+    }
+    .ds-btn-add-prod {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1.1rem;
+        background: #faf7f0;
+        border: 1px dashed #9e7b2f;
+        color: #7c5f20;
+        border-radius: 4px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 0.25rem;
+    }
+    .ds-btn-add-prod:hover { background: #f3ecdc; }
     .ds-venta-errors {
         background: #fdf2f2;
         border: 1px solid #f5c2c7;
@@ -114,14 +166,14 @@
         <a href="{% url 'ventas:lista' %}" class="ds-venta-back">&larr; Volver a Ventas</a>
     </div>
 
-    {% if venta_form.non_field_errors or detalle_form.non_field_errors %}
+    {% if venta_form.non_field_errors or formset.non_form_errors %}
     <div class="ds-venta-errors">
         {{ venta_form.non_field_errors }}
-        {{ detalle_form.non_field_errors }}
+        {{ formset.non_form_errors }}
     </div>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form method="post" id="ds-form-venta" novalidate>
         {% csrf_token %}
 
         <div class="ds-venta-section">Datos de la Venta</div>
@@ -135,16 +187,55 @@
         </div>
         {% endfor %}
 
-        <div class="ds-venta-section">Producto a Vender</div>
-        {% for field in detalle_form %}
-        <div class="ds-venta-field">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div class="ds-field-error">{{ field.errors|join:", " }}</div>
-            {% endif %}
+        <div class="ds-venta-section">Productos a Vender</div>
+        {{ formset.management_form }}
+
+        <div id="ds-productos-container">
+            {% for dform in formset %}
+            <div class="ds-producto-card">
+                <div class="ds-producto-card-head">
+                    <span class="ds-producto-num">Producto #{{ forloop.counter }}</span>
+                    <button type="button" class="ds-btn-remove" onclick="quitarProducto(this)">Quitar</button>
+                </div>
+                {% for hidden in dform.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="ds-producto-grid">
+                    {% for field in dform.visible_fields %}
+                        {% if field.name != 'DELETE' %}
+                        <div class="ds-venta-field">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="ds-field-error">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+
+        <button type="button" class="ds-btn-add-prod" onclick="agregarProducto()">+ Agregar otro producto</button>
+
+        <template id="ds-empty-producto">
+            <div class="ds-producto-card">
+                <div class="ds-producto-card-head">
+                    <span class="ds-producto-num">Producto</span>
+                    <button type="button" class="ds-btn-remove" onclick="quitarProducto(this)">Quitar</button>
+                </div>
+                {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="ds-producto-grid">
+                    {% for field in formset.empty_form.visible_fields %}
+                        {% if field.name != 'DELETE' %}
+                        <div class="ds-venta-field">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </template>
 
         <div class="ds-venta-actions">
             <a href="{% url 'ventas:lista' %}" class="ds-btn-cancel">Cancelar</a>
@@ -152,4 +243,58 @@
         </div>
     </form>
 </div>
+
+<script>
+function reindexarProductos() {
+    const container = document.getElementById('ds-productos-container');
+    const cards = container.querySelectorAll('.ds-producto-card');
+    const totalInput = document.getElementById('id_detalles-TOTAL_FORMS');
+
+    cards.forEach((card, idx) => {
+        const title = card.querySelector('.ds-producto-num');
+        if (title) title.textContent = `Producto #${idx + 1}`;
+
+        card.querySelectorAll('input, select, textarea, label').forEach(el => {
+            ['name', 'id', 'for'].forEach(attr => {
+                const val = el.getAttribute(attr);
+                if (val) {
+                    el.setAttribute(attr, val.replace(/detalles-(?:\d+|__prefix__)-/g, `detalles-${idx}-`));
+                }
+            });
+        });
+    });
+
+    totalInput.value = cards.length;
+}
+
+function agregarProducto() {
+    const container = document.getElementById('ds-productos-container');
+    const tpl = document.getElementById('ds-empty-producto');
+    const clone = tpl.content.cloneNode(true);
+    container.appendChild(clone);
+    reindexarProductos();
+}
+
+function quitarProducto(btn) {
+    const container = document.getElementById('ds-productos-container');
+    const cards = container.querySelectorAll('.ds-producto-card');
+    if (cards.length <= 1) return;
+    btn.closest('.ds-producto-card').remove();
+    reindexarProductos();
+}
+
+document.getElementById('ds-form-venta').addEventListener('submit', function() {
+    const container = document.getElementById('ds-productos-container');
+    const cards = Array.from(container.querySelectorAll('.ds-producto-card'));
+    if (cards.length > 1) {
+        cards.forEach(card => {
+            const sel = card.querySelector('select');
+            if (sel && !sel.value && container.querySelectorAll('.ds-producto-card').length > 1) {
+                card.remove();
+            }
+        });
+        reindexarProductos();
+    }
+});
+</script>
 {% endblock %}
