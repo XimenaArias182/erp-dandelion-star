@@ -337,3 +337,171 @@ def api_catalogo_variantes(request):
             "extras": [{"id": ex.id, "url": ex.imagen.url} for ex in prod.imagenes_extra.all() if ex.imagen],
         }
     return JsonResponse(data)
+
+
+# === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
+from django.contrib import messages as _prod_messages
+from django.contrib.auth.decorators import login_required as _prod_login_required
+from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
+from django.views.decorators.http import require_POST as _prod_require_POST
+
+
+def _prod_first_attr(obj, names, default=''):
+    if not obj:
+        return default
+    for name in names:
+        val = getattr(obj, name, None)
+        if callable(val):
+            try:
+                val = val()
+            except Exception:
+                val = None
+        if val not in (None, ''):
+            return val
+    return default
+
+
+def _build_producto_editorial_data(producto):
+    from configuracion.models import ConfiguracionERP
+    from .models import ProductoColor
+
+    config = ConfiguracionERP.get_instance()
+    raw_emp = str(_prod_first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], '')).strip()
+    if not raw_emp or raw_emp.lower() in ('mi empresa erp', 'mi empresa'):
+        empresa_nombre = 'DANDELION STAR'
+    else:
+        empresa_nombre = raw_emp.upper()
+
+    img_url = ''
+    for fname in ('imagen', 'foto', 'image', 'imagen_principal', 'foto_principal'):
+        fval = getattr(producto, fname, None)
+        if fval:
+            try:
+                img_url = fval.url
+                if img_url:
+                    break
+            except Exception:
+                pass
+
+    cat_obj = getattr(producto, 'categoria', None)
+    prov_obj = getattr(producto, 'proveedor', None)
+
+    activo_val = getattr(producto, 'activo', None)
+    if activo_val is None:
+        estado_str = str(_prod_first_attr(producto, ['get_estado_display', 'estado', 'estatus'], 'Activo'))
+        es_activo = estado_str.lower() not in ('inactivo', 'agotado', 'false', '0')
+    else:
+        es_activo = bool(activo_val)
+        estado_str = 'Activo' if es_activo else 'Inactivo'
+
+    stock_val = _prod_first_attr(producto, ['stock', 'cantidad', 'existencia', 'inventario'], 0)
+    precio_val = _prod_first_attr(producto, ['precio', 'precio_venta', 'precio_unitario'], 0)
+    sku_val = _prod_first_attr(producto, ['sku', 'codigo', 'referencia', 'clave'], f'DS-{producto.pk:04d}')
+    desc_val = _prod_first_attr(producto, ['descripcion', 'detalle', 'notas', 'observaciones'], '')
+    fecha_val = _prod_first_attr(producto, ['fecha_creacion', 'created_at', 'fecha_registro', 'actualizado'], None)
+
+    colores_qs = ProductoColor.objects.filter(producto=producto).order_by('orden', 'id')
+    colores_list = []
+
+    if colores_qs.exists():
+        # Si el producto tiene imagen base y a?n no est? incluida como variante, la mostramos primero como "Cl?sico"
+        if img_url:
+            colores_list.append({
+                'id': 0,
+                'nombre': 'Original',
+                'codigo_hex': '#e8e4dc',
+                'imagen_url': img_url,
+                'stock': stock_val,
+                'es_principal': True,
+            })
+        for c in colores_qs:
+            c_img = ''
+            if c.imagen:
+                try:
+                    c_img = c.imagen.url
+                except Exception:
+                    c_img = ''
+            colores_list.append({
+                'id': c.id,
+                'nombre': c.nombre,
+                'codigo_hex': c.codigo_hex or '#1c1c1c',
+                'imagen_url': c_img or img_url,
+                'stock': c.stock if c.stock else stock_val,
+                'es_principal': False,
+            })
+    else:
+        colores_list.append({
+            'id': 0,
+            'nombre': '?nico / Original',
+            'codigo_hex': '#ebe7e0',
+            'imagen_url': img_url,
+            'stock': stock_val,
+            'es_principal': True,
+        })
+
+    return {
+        'empresa_nombre': empresa_nombre,
+        'prod_info': {
+            'id': producto.pk,
+            'nombre': _prod_first_attr(producto, ['nombre', 'titulo'], f'Producto #{producto.pk}'),
+            'categoria': _prod_first_attr(cat_obj, ['nombre'], str(cat_obj) if cat_obj else 'Colecci?n Exclusiva'),
+            'proveedor': _prod_first_attr(prov_obj, ['nombre', 'razon_social'], str(prov_obj) if prov_obj else empresa_nombre.title()),
+            'precio': precio_val,
+            'stock': stock_val,
+            'es_activo': es_activo,
+            'estado': estado_str,
+            'sku': sku_val,
+            'descripcion': desc_val,
+            'fecha_registro': fecha_val,
+            'imagen_url': img_url,
+        },
+        'colores_list': colores_list,
+    }
+
+
+def producto_detalle_editorial(request, pk: int):
+    from .models import Producto
+    producto = _prod_get_object_or_404(Producto, pk=pk)
+    ctx = {'producto': producto, 'object': producto}
+    ctx.update(_build_producto_editorial_data(producto))
+    return _prod_render(request, 'productos/detalle.html', ctx)
+
+
+@_prod_login_required
+@_prod_require_POST
+def agregar_color_producto(request, pk: int):
+    from .models import Producto, ProductoColor
+    producto = _prod_get_object_or_404(Producto, pk=pk)
+    nombre = (request.POST.get('nombre') or '').strip()
+    codigo_hex = (request.POST.get('codigo_hex') or '#1c1c1c').strip()
+    imagen = request.FILES.get('imagen')
+    try:
+        stock = max(0, int(request.POST.get('stock') or 0))
+    except ValueError:
+        stock = 0
+
+    if not nombre:
+        _prod_messages.error(request, 'Escribe el nombre del color.')
+        return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
+
+    ProductoColor.objects.create(
+        producto=producto,
+        nombre=nombre,
+        codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
+        imagen=imagen,
+        stock=stock,
+    )
+    _prod_messages.success(request, f'Color "{nombre}" agregado a {producto}.')
+    return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
+
+
+@_prod_login_required
+@_prod_require_POST
+def eliminar_color_producto(request, color_id: int):
+    from .models import ProductoColor
+    color = _prod_get_object_or_404(ProductoColor, pk=color_id)
+    prod_pk = color.producto_id
+    nombre = color.nombre
+    color.delete()
+    _prod_messages.success(request, f'Color "{nombre}" eliminado.')
+    return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{prod_pk}/')

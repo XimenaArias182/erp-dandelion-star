@@ -13,3 +13,16 @@ urlpatterns = [
     path('<int:pk>/editar/', views.ProductoUpdateView.as_view(), name='editar'),
     path('<int:pk>/eliminar/', views.ProductoDeleteView.as_view(), name='eliminar'),
 ]
+
+from .views import (
+    producto_detalle_editorial as _producto_detalle_editorial,
+    agregar_color_producto as _agregar_color_producto,
+    eliminar_color_producto as _eliminar_color_producto,
+)
+
+urlpatterns = [
+    path('<int:pk>/', _producto_detalle_editorial, name='detalle'),
+    path('detalle/<int:pk>/', _producto_detalle_editorial, name='detalle_alt'),
+    path('<int:pk>/colores/agregar/', _agregar_color_producto, name='agregar_color'),
+    path('colores/<int:color_id>/eliminar/', _eliminar_color_producto, name='eliminar_color'),
+] + urlpatterns
