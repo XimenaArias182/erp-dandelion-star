@@ -1,190 +1,154 @@
-{% extends 'base.html' %}
-{% load static %}
-
+{% extends "base.html" %}
 {% block content %}
-<style id="ds-prov-form-style">
-    .ds-form-shell {
-        max-width: 760px;
-        margin: 28px auto 56px;
-        padding: 32px 36px;
-        background: #FFFFFF;
-        border: 1px solid #EAEAEA;
-        color: #111111;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+<style>
+    .ds-venta-wrap {
+        max-width: 820px;
+        margin: 2rem auto;
+        padding: 2.2rem 2.5rem;
+        background: #ffffff;
+        border: 1px solid #ece8e1;
+        border-radius: 6px;
     }
-    .ds-form-head {
+    .ds-venta-header {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        padding-bottom: 16px;
-        margin-bottom: 24px;
-        border-bottom: 1px solid #EAEAEA;
+        align-items: center;
+        padding-bottom: 1.2rem;
+        margin-bottom: 1.8rem;
+        border-bottom: 1px solid #ece8e1;
     }
-    .ds-form-title {
-        margin: 0;
-        font-size: 1.45rem;
+    .ds-venta-title {
+        font-family: 'Great Vibes', 'Playfair Display', Georgia, serif;
+        font-size: 2.6rem;
         font-weight: 400;
-        letter-spacing: 0.03em;
-        color: #111111;
+        color: #9e7b2f;
+        margin: 0;
     }
-    .ds-form-back {
-        font-size: 0.82rem;
-        color: #555555 !important;
-        text-decoration: none !important;
-    }
-    .ds-form-back:hover {
-        color: #111111 !important;
-        text-decoration: underline !important;
-    }
-    .ds-form-alert {
-        padding: 12px 14px;
-        margin-bottom: 20px;
-        background: #FEF2F2;
-        border: 1px solid #FECACA;
-        color: #991B1B;
-        font-size: 0.84rem;
-        border-radius: 2px;
-    }
-    .ds-logo-preview {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 10px 12px;
-        margin-bottom: 10px;
-        background: #F6F6F6;
-        border: 1px solid #E5E5E5;
-        font-size: 0.78rem;
-        color: #555555;
-    }
-    .ds-logo-preview img {
-        width: 54px;
-        height: 54px;
-        object-fit: contain;
-        background: #FFFFFF;
-        border: 1px solid #E0E0E0;
-        padding: 4px;
-    }
-    .ds-form-group {
-        margin-bottom: 18px;
-    }
-    .ds-form-group label {
-        display: block;
-        font-size: 0.76rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #333333;
-        margin-bottom: 6px;
-    }
-    .ds-form-group input[type="text"],
-    .ds-form-group input[type="email"],
-    .ds-form-group input[type="number"],
-    .ds-form-group input[type="tel"],
-    .ds-form-group select,
-    .ds-form-group textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #D8D8D8;
-        background: #FAFAFA;
-        color: #111111;
+    .ds-venta-back {
+        color: #555;
+        text-decoration: none;
         font-size: 0.9rem;
-        border-radius: 2px;
-        box-sizing: border-box;
     }
-    .ds-form-group input:focus,
-    .ds-form-group select:focus,
-    .ds-form-group textarea:focus {
-        outline: none;
-        border-color: #111111;
-        background: #FFFFFF;
+    .ds-venta-back:hover { color: #111; }
+    .ds-venta-section {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9e7b2f;
+        margin: 1.5rem 0 1rem;
     }
-    .ds-form-group input[type="file"] {
+    .ds-venta-field { margin-bottom: 1.2rem; }
+    .ds-venta-field label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #333;
+        margin-bottom: 0.45rem;
+    }
+    .ds-venta-field input,
+    .ds-venta-field select,
+    .ds-venta-field textarea {
         width: 100%;
-        padding: 10px 12px;
-        border: 1px dashed #CCCCCC;
-        background: #FAFAFA;
-        font-size: 0.85rem;
+        padding: 0.65rem 0.85rem;
+        border: 1px solid #d8d4cc;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        background: #fff;
         box-sizing: border-box;
     }
-    .ds-form-actions {
+    .ds-venta-field input:focus,
+    .ds-venta-field select:focus,
+    .ds-venta-field textarea:focus {
+        outline: none;
+        border-color: #9e7b2f;
+    }
+    .ds-venta-errors {
+        background: #fdf2f2;
+        border: 1px solid #f5c2c7;
+        color: #842029;
+        padding: 0.75rem 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+    .ds-field-error {
+        color: #b42318;
+        font-size: 0.82rem;
+        margin-top: 0.3rem;
+    }
+    .ds-venta-actions {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 24px;
-        padding-top: 18px;
-        border-top: 1px solid #EAEAEA;
-    }
-    .ds-btn-save {
-        padding: 10px 24px;
-        border: 1px solid #111111;
-        background: #111111;
-        color: #FFFFFF;
-        font-size: 0.84rem;
-        font-weight: 500;
-        cursor: pointer;
-        border-radius: 2px;
-    }
-    .ds-btn-save:hover {
-        background: #FFFFFF;
-        color: #111111;
+        justify-content: flex-end;
+        gap: 0.8rem;
+        margin-top: 2rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid #ece8e1;
     }
     .ds-btn-cancel {
-        padding: 10px 20px;
-        border: 1px solid #D4D4D4;
-        background: #FFFFFF;
-        color: #333333 !important;
-        font-size: 0.84rem;
-        text-decoration: none !important;
-        border-radius: 2px;
+        padding: 0.7rem 1.4rem;
+        border: 1px solid #d8d4cc;
+        border-radius: 4px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9rem;
     }
+    .ds-btn-submit {
+        padding: 0.7rem 1.6rem;
+        background: #111111;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .ds-btn-submit:hover { background: #2b2b2b; }
 </style>
 
-<div class="ds-form-shell">
-    <div class="ds-form-head">
-        <h1 class="ds-form-title">{% if proveedor and proveedor.pk %}Editar {{ proveedor.nombre }}{% else %}Nuevo Proveedor{% endif %}</h1>
-        <a href="{% url 'proveedores:lista' %}" class="ds-form-back">&larr; Volver a Proveedores</a>
+<div class="ds-venta-wrap">
+    <div class="ds-venta-header">
+        <h1 class="ds-venta-title">Nueva Venta</h1>
+        <a href="{% url 'ventas:lista' %}" class="ds-venta-back">&larr; Volver a Ventas</a>
     </div>
 
-    {% if error_msg %}
-    <div class="ds-form-alert">{{ error_msg }}</div>
+    {% if venta_form.non_field_errors or detalle_form.non_field_errors %}
+    <div class="ds-venta-errors">
+        {{ venta_form.non_field_errors }}
+        {{ detalle_form.non_field_errors }}
+    </div>
     {% endif %}
 
-    <form method="post" action="{{ request.path }}" enctype="multipart/form-data">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="ds-form-group">
-    <label for="id_logo">Logo de la marca</label>
-    {% if proveedor and proveedor.pk and proveedor.logo %}
-    <div class="ds-logo-preview">
-        <img src="{{ proveedor.logo.url }}" alt="Logo actual">
-        <span>Logo actual cargado (puedes elegir otro archivo para reemplazarlo)</span>
-    </div>
-    {% endif %}
-    <input type="file" id="id_logo" name="logo" accept="image/*">
-</div>
-        <div class="ds-form-group">
-    <label for="id_nombre">Nombre</label>
-    <input type="text" id="id_nombre" name="nombre" value="{{ proveedor.nombre|default:"" }}" required>
-</div>
-        <div class="ds-form-group">
-    <label for="id_contacto">Persona de contacto</label>
-    <input type="text" id="id_contacto" name="contacto" value="{{ proveedor.contacto|default:"" }}">
-</div>
-        <div class="ds-form-group">
-    <label for="id_correo">Correo electrónico</label>
-    <input type="text" id="id_correo" name="correo" value="{{ proveedor.correo|default:"" }}" required>
-</div>
-        <div class="ds-form-group">
-    <label for="id_telefono">Teléfono</label>
-    <input type="text" id="id_telefono" name="telefono" value="{{ proveedor.telefono|default:"" }}">
-</div>
-        <div class="ds-form-group" style="display:flex;align-items:center;gap:10px;">
-    <input type="checkbox" id="id_activo" name="activo" {% if not proveedor or proveedor.activo %}checked{% endif %}>
-    <label for="id_activo" style="margin:0;">Activo</label>
-</div>
-        <div class="ds-form-actions">
-            <button type="submit" class="ds-btn-save">Guardar cambios</button>
-            <a href="{% url 'proveedores:lista' %}" class="ds-btn-cancel">Cancelar</a>
+
+        <div class="ds-venta-section">Datos de la Venta</div>
+        {% for field in venta_form %}
+        <div class="ds-venta-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="ds-field-error">{{ field.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="ds-venta-section">Producto a Vender</div>
+        {% for field in detalle_form %}
+        <div class="ds-venta-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="ds-field-error">{{ field.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="ds-venta-actions">
+            <a href="{% url 'ventas:lista' %}" class="ds-btn-cancel">Cancelar</a>
+            <button type="submit" class="ds-btn-submit">Registrar Venta</button>
         </div>
     </form>
 </div>
