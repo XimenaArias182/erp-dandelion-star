@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Factura / Nota de Remisión #{{ venta_info.folio }}</title>
+<title>Factura / Nota de Remisi?n #{{ venta_info.folio }}</title>
 <style>
     @page {
         size: letter;
@@ -21,7 +21,7 @@
         border-spacing: 0;
     }
 
-    /* CABECERA SUPERIOR: LOGO REDONDO CON BRILLO DORADO + TÍTULO ESTILO PALACIO DE HIERRO */
+    /* CABECERA SUPERIOR: LOGO REDONDO CON BRILLO DORADO + T?TULO ESTILO EL PALACIO DE HIERRO */
     .top-brand-table {
         margin-bottom: 14px;
     }
@@ -30,28 +30,28 @@
         border: none;
     }
     .brand-logo {
-        width: 104px;
-        height: 104px;
+        width: 108px;
+        height: 108px;
     }
     .brand-header-name {
         font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
         font-size: 9.5pt;
         font-weight: normal;
-        letter-spacing: 2.6px;
+        letter-spacing: 2.5px;
         text-transform: uppercase;
         color: #1c1c1c;
-        margin-top: 4px;
+        margin-top: 2px;
     }
 
-    /* BLOQUE DE TÍTULO EDITORIAL DE LUJO (ESTILO EL PALACIO DE HIERRO) */
+    /* T?TULO EDITORIAL ESTILO EL PALACIO DE HIERRO */
     .ph-title-box {
         text-align: center;
         padding: 4px 10px;
     }
     .ph-kicker {
         font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
-        font-size: 7.8pt;
-        letter-spacing: 4px;
+        font-size: 8.2pt;
+        letter-spacing: 4.5px;
         text-transform: uppercase;
         color: #9e7b2f;
         margin-bottom: 5px;
@@ -69,7 +69,7 @@
     .ph-gold-rule {
         width: 78%;
         margin: 7px auto;
-        border-bottom: 1.5px solid #b8933d;
+        border-bottom: 1.5pt solid #b8933d;
     }
     .ph-subtitle {
         font-family: "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
@@ -81,12 +81,12 @@
         margin: 0;
     }
 
-    /* CUADRÍCULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
+    /* CUADR?CULA DE CLIENTE Y FECHA SIN RAYAS BLANCAS */
     .meta-grid {
         margin-bottom: 14px;
     }
     .meta-grid td {
-        border: 1px solid #222222;
+        border: 1pt solid #222222;
         padding: 6px 9px;
         font-size: 9.5pt;
         vertical-align: middle;
@@ -107,7 +107,7 @@
         font-size: 9.2pt;
         letter-spacing: 2px;
         text-transform: uppercase;
-        border: 1px solid #222222;
+        border: 1.5pt solid #222222 !important;
     }
     .fecha-cell {
         text-align: center;
@@ -116,17 +116,11 @@
         width: 9.5%;
     }
 
-    /* TABLA PRINCIPAL DE PRODUCTOS CON ENCABEZADO SÓLIDO SIN RAYITAS BLANCAS */
-    .items-grid thead tr {
-        background-color: #222222;
-    }
+    /* TABLA PRINCIPAL DE PRODUCTOS CON BORDES S?LIDOS DEL MISMO COLOR PARA EVITAR RAYAS BLANCAS */
     .items-grid th {
         background-color: #222222;
         color: #ffffff;
-        border-top: 1px solid #222222;
-        border-bottom: 1px solid #222222;
-        border-left: none;
-        border-right: none;
+        border: 1.5pt solid #222222;
         padding: 8px 6px;
         font-size: 9pt;
         font-weight: normal;
@@ -134,14 +128,8 @@
         text-transform: uppercase;
         text-align: center;
     }
-    .items-grid th.first-col {
-        border-left: 1px solid #222222;
-    }
-    .items-grid th.last-col {
-        border-right: 1px solid #222222;
-    }
     .items-grid td {
-        border: 1px solid #222222;
+        border: 1pt solid #222222;
         padding: 6px 8px;
         font-size: 9.5pt;
         line-height: 1.35;
@@ -162,7 +150,7 @@
         color: #555555;
     }
 
-    /* BLOQUE INFERIOR DE EMPRESA Y TOTALES SIN RAYITAS BLANCAS */
+    /* BLOQUE INFERIOR DE EMPRESA Y TOTALES SIN RAYAS BLANCAS */
     .bottom-summary-table td {
         vertical-align: top;
     }
@@ -200,23 +188,17 @@
         letter-spacing: 1.5px;
         text-transform: uppercase;
         width: 50%;
-        border-left: 1px solid #222222;
-        border-right: 1px solid #222222;
-        border-bottom: 1px solid #222222;
-        border-top: none;
+        border: 1.5pt solid #222222;
     }
     .tot-val {
         text-align: right;
         font-weight: bold;
         color: #111111;
         width: 50%;
-        border-right: 1px solid #222222;
-        border-bottom: 1px solid #222222;
-        border-left: 1px solid #222222;
-        border-top: none;
+        border: 1pt solid #222222;
     }
 
-    /* PIE DE PÁGINA EN 3 COLUMNAS ESTILO EDITORIAL */
+    /* PIE DE P?GINA EN 3 COLUMNAS */
     .footer-table {
         margin-top: 22px;
     }
@@ -228,7 +210,7 @@
         text-transform: uppercase;
         color: #1c1c1c;
         padding-bottom: 5px;
-        border-bottom: 1.2px solid #b8933d;
+        border-bottom: 1.2pt solid #b8933d;
         width: 33.33%;
     }
     .footer-body td {
@@ -243,7 +225,7 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO: LOGO REDONDO DORADO + TÍTULO ESTILO EL PALACIO DE HIERRO -->
+    <!-- ENCABEZADO: LOGO REDONDO CON BRILLO DORADO + T?TULO ESTILO EL PALACIO DE HIERRO -->
     <table class="top-brand-table">
         <tr>
             <td style="width: 24%; text-align: center;">
@@ -257,7 +239,7 @@
                     <div class="ph-kicker">{{ empresa.nombre }}</div>
                     <div class="ph-main-title">FACTURA</div>
                     <div class="ph-gold-rule"></div>
-                    <div class="ph-subtitle">NOTA DE REMISIÓN</div>
+                    <div class="ph-subtitle">NOTA DE REMISI?N</div>
                 </div>
             </td>
             <td style="width: 22%; text-align: right; font-size: 8.6pt; color: #444444; line-height: 1.5;">
@@ -268,7 +250,7 @@
         </tr>
     </table>
 
-    <!-- CUADRÍCULA DE FACTURA NO., FECHA Y CLIENTE -->
+    <!-- CUADR?CULA DE FACTURA NO., FECHA Y CLIENTE -->
     <table class="meta-grid">
         <tr>
             <td style="width: 71.5%;">
@@ -309,10 +291,10 @@
     <table class="items-grid">
         <thead>
             <tr>
-                <th class="col-cant first-col">CANTIDAD</th>
-                <th class="col-desc">DESCRIPCIÓN</th>
+                <th class="col-cant">CANTIDAD</th>
+                <th class="col-desc">DESCRIPCI?N</th>
                 <th class="col-unit">VALOR UNITARIO</th>
-                <th class="col-imp last-col">IMPORTE</th>
+                <th class="col-imp">IMPORTE</th>
             </tr>
         </thead>
         <tbody>
@@ -342,13 +324,13 @@
         </tbody>
     </table>
 
-    <!-- BLOQUE INFERIOR: EMPRESA A LA IZQUIERDA Y SUBTOTAL / IMPUESTO / TOTAL A LA DERECHA -->
+    <!-- BLOQUE INFERIOR: DANDELION STAR A LA IZQUIERDA Y SUBTOTAL / IMPUESTO / TOTAL A LA DERECHA -->
     <table class="bottom-summary-table">
         <tr>
             <td class="empresa-firma-box" style="width: 60%;">
                 <div class="empresa-firma-nombre">{{ empresa.nombre }}</div>
                 <div class="empresa-firma-detalle">
-                    <div><strong>Lugar de emisión:</strong> {{ venta_info.lugar }}</div>
+                    <div><strong>Lugar de emisi?n:</strong> {{ venta_info.lugar }}</div>
                     <div><strong>Fecha y hora:</strong> {{ venta_info.dia }}/{{ venta_info.mes }}/{{ venta_info.anio }} {{ venta_info.hora }}</div>
                     {% if venta_info.notas %}
                         <div><strong>Notas:</strong> {{ venta_info.notas }}</div>
@@ -380,11 +362,11 @@
         </tr>
     </table>
 
-    <!-- PIE DE PÁGINA EN 3 COLUMNAS -->
+    <!-- PIE DE P?GINA EN 3 COLUMNAS -->
     <table class="footer-table">
         <tr class="footer-head">
-            <td>Dirección</td>
-            <td>Teléfono</td>
+            <td>Direcci?n</td>
+            <td>Tel?fono</td>
             <td>Sitio web</td>
         </tr>
         <tr class="footer-body">

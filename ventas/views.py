@@ -190,12 +190,12 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             top = (h - side) // 2
             im = im.crop((left, top, left + side, top + side))
 
-            inner_size = 220
-            canvas_size = 276
+            inner_size = 240
+            canvas_size = 310
             center = canvas_size // 2
             im = im.resize((inner_size, inner_size), resampling)
 
-            # Máscara circular suavizada (4x supersampling)
+            # M?scara circular suavizada
             scale = 4
             big_mask = Image.new('L', (inner_size * scale, inner_size * scale), 0)
             ImageDraw.Draw(big_mask).ellipse(
@@ -204,48 +204,52 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             )
             circle_mask = big_mask.resize((inner_size, inner_size), resampling)
 
+            # Lienzo blanco puro para evitar artefactos alfa en PDF
+            base_white = Image.new('RGBA', (canvas_size, canvas_size), (255, 255, 255, 255))
+
             # Resplandor dorado exterior
             glow_layer = Image.new('RGBA', (canvas_size, canvas_size), (0, 0, 0, 0))
             glow_draw = ImageDraw.Draw(glow_layer)
-            r_outer = inner_size // 2 + 13
-            r_mid = inner_size // 2 + 7
+            r_outer = inner_size // 2 + 18
+            r_mid = inner_size // 2 + 10
             glow_draw.ellipse(
                 (center - r_outer, center - r_outer, center + r_outer, center + r_outer),
-                fill=(212, 175, 55, 165),
+                fill=(218, 178, 62, 140),
             )
             glow_draw.ellipse(
                 (center - r_mid, center - r_mid, center + r_mid, center + r_mid),
-                fill=(246, 220, 130, 225),
+                fill=(245, 216, 120, 210),
             )
-            glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=8))
+            glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=10))
 
-            # Aro metálico dorado alrededor del logo
+            # Aro dorado met?lico alrededor del c?rculo
             ring_layer = Image.new('RGBA', (canvas_size * scale, canvas_size * scale), (0, 0, 0, 0))
             ring_draw = ImageDraw.Draw(ring_layer)
             c_big = center * scale
-            r_gold = (inner_size // 2 + 4) * scale
-            r_inner_gold = (inner_size // 2) * scale
+            r_gold_ext = (inner_size // 2 + 5) * scale
+            r_gold_int = (inner_size // 2 + 2) * scale
             ring_draw.ellipse(
-                (c_big - r_gold, c_big - r_gold, c_big + r_gold, c_big + r_gold),
-                fill=(198, 156, 58, 255),
+                (c_big - r_gold_ext, c_big - r_gold_ext, c_big + r_gold_ext, c_big + r_gold_ext),
+                fill=(196, 152, 52, 255),
             )
             ring_draw.ellipse(
-                (c_big - r_inner_gold, c_big - r_inner_gold, c_big + r_inner_gold, c_big + r_inner_gold),
-                fill=(245, 222, 145, 255),
+                (c_big - r_gold_int, c_big - r_gold_int, c_big + r_gold_int, c_big + r_gold_int),
+                fill=(246, 224, 148, 255),
             )
             ring_smooth = ring_layer.resize((canvas_size, canvas_size), resampling)
 
-            final_img = Image.alpha_composite(glow_layer, ring_smooth)
+            composed = Image.alpha_composite(base_white, glow_layer)
+            composed = Image.alpha_composite(composed, ring_smooth)
             offset = (canvas_size - inner_size) // 2
-            final_img.paste(im, (offset, offset), circle_mask)
+            composed.paste(im, (offset, offset), circle_mask)
 
             out = _BytesIO()
-            final_img.save(out, format='PNG')
+            composed.convert('RGB').save(out, format='PNG', optimize=True)
             return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
         except Exception:
             return f"data:image/png;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
 
-    # Buscar logo en ConfiguracionERP o en archivos estáticos del proyecto
+    # Buscar logo en ConfiguracionERP o en archivos est?ticos del proyecto
     logo_data_uri = ''
     for field_name in ('logo', 'imagen', 'logo_empresa', 'icono'):
         logo_field = getattr(config, field_name, None)
@@ -276,12 +280,18 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                     except Exception:
                         pass
 
+    raw_nombre = str(_first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], '')).strip()
+    if not raw_nombre or raw_nombre.lower() in ('mi empresa erp', 'mi empresa'):
+        nombre_empresa = 'Dandelion Star'
+    else:
+        nombre_empresa = raw_nombre
+
     empresa = {
-        'nombre': _first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], 'DANDELION STAR'),
+        'nombre': nombre_empresa,
         'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif']),
-        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], 'Celaya, Guanajuato, México'),
+        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], 'Celaya, Guanajuato, M?xico'),
         'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais']),
-        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], '—'),
+        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], '?'),
         'email': _first_attr(config, ['email', 'correo', 'correo_electronico']),
         'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web'], 'erp-dandelion-star.onrender.com'),
         'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '$'),
@@ -290,10 +300,10 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     cliente_obj = getattr(venta, 'cliente', None)
     cliente_info = {
-        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'Público en General'),
-        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], '—'),
-        'email': _first_attr(cliente_obj, ['email', 'correo'], '—'),
-        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], '—'),
+        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'P?blico en General'),
+        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], '?'),
+        'email': _first_attr(cliente_obj, ['email', 'correo'], '?'),
+        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], '?'),
         'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id']),
     }
 
