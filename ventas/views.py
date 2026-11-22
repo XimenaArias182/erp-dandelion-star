@@ -149,9 +149,10 @@ from .models import Venta as _Venta
 @_login_required
 def venta_pdf(request, venta_id: int) -> _HttpResponse:
     import base64
-    from datetime import date
+    from datetime import date, datetime
     from decimal import Decimal
     from io import BytesIO as _BytesIO
+    from pathlib import Path as _Path
     from configuracion.models import ConfiguracionERP
 
     venta = _get_object_or_404(
@@ -177,32 +178,53 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                 return val
         return default
 
-    # Convertir logo de la empresa a Base64 para que se muestre tanto en xhtml2pdf como en WeasyPrint
+    def _to_data_uri(raw_bytes: bytes, filename: str) -> str:
+        ext = str(filename).lower().split('.')[-1]
+        mime = (
+            'image/jpeg' if ext in ('jpg', 'jpeg')
+            else ('image/webp' if ext == 'webp' else 'image/png')
+        )
+        return f"data:{mime};base64,{base64.b64encode(raw_bytes).decode('ascii')}"
+
+    # Buscar logo en ConfiguracionERP o en archivos estáticos del proyecto
     logo_data_uri = ''
-    logo_field = getattr(config, 'logo', None)
-    if logo_field:
-        try:
-            with logo_field.open('rb') as f:
-                raw = f.read()
-            ext = str(getattr(logo_field, 'name', '')).lower().split('.')[-1]
-            mime = 'image/jpeg' if ext in ('jpg', 'jpeg') else ('image/webp' if ext == 'webp' else 'image/png')
-            logo_data_uri = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
-        except Exception:
-            logo_data_uri = ''
+    for field_name in ('logo', 'imagen', 'logo_empresa', 'icono'):
+        logo_field = getattr(config, field_name, None)
+        if logo_field:
+            try:
+                with logo_field.open('rb') as f:
+                    logo_data_uri = _to_data_uri(f.read(), getattr(logo_field, 'name', 'logo.png'))
+                if logo_data_uri:
+                    break
+            except Exception:
+                pass
+
+    if not logo_data_uri:
+        base_dir = _Path(settings.BASE_DIR)
+        for folder in ('static', 'staticfiles', 'media'):
+            search_root = base_dir / folder
+            if search_root.exists():
+                matches = [
+                    p for p in search_root.rglob('*')
+                    if p.is_file()
+                    and p.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp')
+                    and ('logo' in p.name.lower() or 'dandelion' in p.name.lower())
+                ]
+                if matches:
+                    try:
+                        logo_data_uri = _to_data_uri(matches[0].read_bytes(), matches[0].name)
+                        break
+                    except Exception:
+                        pass
 
     empresa = {
         'nombre': _first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], 'Dandelion Star'),
         'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif']),
-        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal']),
+        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], 'Celaya, Guanajuato, México'),
         'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais']),
-        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp']),
+        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], '—'),
         'email': _first_attr(config, ['email', 'correo', 'correo_electronico']),
-        'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web']),
-        'leyenda': _first_attr(
-            config,
-            ['pie_pagina', 'mensaje_ticket', 'leyenda', 'notas_factura'],
-            'Gracias por su compra. Este documento sirve como comprobante oficial de la operación.',
-        ),
+        'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web'], 'erp-dandelion-star.onrender.com'),
         'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '),
         'logo_data_uri': logo_data_uri,
     }
@@ -210,9 +232,9 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
     cliente_obj = getattr(venta, 'cliente', None)
     cliente_info = {
         'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'Público en General'),
-        'telefono': _first_attr(cliente_obj, ['telefono', 'celular']),
-        'email': _first_attr(cliente_obj, ['email', 'correo']),
-        'direccion': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad']),
+        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], '—'),
+        'email': _first_attr(cliente_obj, ['email', 'correo'], '—'),
+        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], '—'),
         'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id']),
     }
 
@@ -231,13 +253,17 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         cat_obj = getattr(prod, 'categoria', None)
         items_pdf.append({
             'num': idx,
+            'cantidad': getattr(d, 'cantidad', 1),
             'nombre': _first_attr(prod, ['nombre', 'titulo'], f'Producto #{idx}'),
             'sku': _first_attr(prod, ['sku', 'codigo', 'referencia']),
             'categoria': _first_attr(cat_obj, ['nombre'], str(cat_obj) if cat_obj else ''),
-            'cantidad': getattr(d, 'cantidad', 1),
             'precio_unitario': precio,
             'subtotal': sub,
         })
+
+    # Rellenar filas vacías hasta completar 9 renglones como en el formato de Nota de Remisión
+    min_rows = 9
+    empty_rows = range(max(0, min_rows - len(items_pdf)))
 
     total_venta = getattr(venta, 'total', None)
     if callable(total_venta):
@@ -252,12 +278,19 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
     impuestos_final = Decimal(str(_first_attr(venta, ['iva', 'impuestos', 'impuesto'], '0.00')))
     descuento_final = Decimal(str(_first_attr(venta, ['descuento'], '0.00')))
 
+    fecha_op = _first_attr(venta, ['fecha', 'fecha_creacion', 'created_at']) or datetime.now()
+    if isinstance(fecha_op, date) and not isinstance(fecha_op, datetime):
+        fecha_op = datetime(fecha_op.year, fecha_op.month, fecha_op.day)
+
     venta_info = {
         'folio': f"{venta.pk:05d}",
-        'fecha': _first_attr(venta, ['fecha', 'fecha_creacion', 'created_at']),
-        'estado': _first_attr(venta, ['get_estado_display', 'estado', 'estatus'], 'Completada'),
-        'metodo_pago': _first_attr(venta, ['get_metodo_pago_display', 'metodo_pago', 'forma_pago'], 'Contado / Registrado'),
-        'lugar': _first_attr(venta, ['sucursal', 'ubicacion', 'lugar']) or empresa['direccion'] or empresa['ciudad'] or 'Matriz / Punto de Venta',
+        'fecha': fecha_op,
+        'dia': fecha_op.strftime('%d'),
+        'mes': fecha_op.strftime('%m'),
+        'anio': fecha_op.strftime('%Y'),
+        'hora': fecha_op.strftime('%H:%M'),
+        'lugar': _first_attr(venta, ['sucursal', 'ubicacion', 'lugar']) or empresa['direccion'],
+        'metodo_pago': _first_attr(venta, ['get_metodo_pago_display', 'metodo_pago', 'forma_pago'], 'Contado'),
         'notas': _first_attr(venta, ['notas', 'observaciones', 'comentarios']),
         'subtotal': subtotal_final,
         'impuestos': impuestos_final,
@@ -272,6 +305,7 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         'empresa': empresa,
         'cliente_info': cliente_info,
         'items_pdf': items_pdf,
+        'empty_rows': empty_rows,
         'venta_info': venta_info,
     }
 
@@ -301,6 +335,6 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     response = _HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = (
-        f'attachment; filename="comprobante_compra_{venta.pk:05d}.pdf"'
+        f'attachment; filename="factura_{venta.pk:05d}.pdf"'
     )
     return response
