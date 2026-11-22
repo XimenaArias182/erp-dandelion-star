@@ -14,3 +14,13 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 
 application = get_wsgi_application()
+
+
+def _auto_migrate_productos():
+    try:
+        from django.core.management import call_command
+        call_command('migrate', 'productos', interactive=False, verbosity=0)
+    except Exception:
+        pass
+
+_auto_migrate_productos()

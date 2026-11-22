@@ -340,33 +340,58 @@ def api_catalogo_variantes(request):
 
 
 # === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
+from decimal import Decimal as _ProdDecimal
 from django.contrib import messages as _prod_messages
 from django.contrib.auth.decorators import login_required as _prod_login_required
 from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
+from django.urls import reverse as _prod_reverse
 from django.views.decorators.http import require_POST as _prod_require_POST
+
+
+def _prod_safe_reverse(names, fallback='/'):
+    for name in names:
+        try:
+            return _prod_reverse(name)
+        except Exception:
+            continue
+    return fallback
 
 
 def _prod_first_attr(obj, names, default=''):
     if not obj:
         return default
     for name in names:
-        val = getattr(obj, name, None)
-        if callable(val):
-            try:
+        try:
+            val = getattr(obj, name, None)
+            if callable(val):
                 val = val()
-            except Exception:
-                val = None
-        if val not in (None, ''):
-            return val
+            if val not in (None, ''):
+                return val
+        except Exception:
+            continue
     return default
+
+
+def _prod_safe_str(obj, default=''):
+    if obj in (None, ''):
+        return default
+    try:
+        txt = str(obj).strip()
+        return txt if txt else default
+    except Exception:
+        return default
 
 
 def _build_producto_editorial_data(producto):
     from configuracion.models import ConfiguracionERP
     from .models import ProductoColor
 
-    config = ConfiguracionERP.get_instance()
-    raw_emp = str(_prod_first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], '')).strip()
+    try:
+        config = ConfiguracionERP.get_instance()
+    except Exception:
+        config = None
+
+    raw_emp = _prod_safe_str(_prod_first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], ''), '')
     if not raw_emp or raw_emp.lower() in ('mi empresa erp', 'mi empresa'):
         empresa_nombre = 'DANDELION STAR'
     else:
@@ -374,37 +399,64 @@ def _build_producto_editorial_data(producto):
 
     img_url = ''
     for fname in ('imagen', 'foto', 'image', 'imagen_principal', 'foto_principal'):
-        fval = getattr(producto, fname, None)
-        if fval:
-            try:
+        try:
+            fval = getattr(producto, fname, None)
+            if fval and getattr(fval, 'name', ''):
                 img_url = fval.url
                 if img_url:
                     break
-            except Exception:
-                pass
+        except Exception:
+            continue
 
     cat_obj = getattr(producto, 'categoria', None)
     prov_obj = getattr(producto, 'proveedor', None)
 
+    cat_nombre = _prod_safe_str(_prod_first_attr(cat_obj, ['nombre', 'titulo'], None), '') or _prod_safe_str(cat_obj, 'Colecci?n Exclusiva')
+    prov_nombre = _prod_safe_str(_prod_first_attr(prov_obj, ['nombre', 'razon_social', 'titulo'], None), '') or _prod_safe_str(prov_obj, empresa_nombre.title())
+
     activo_val = getattr(producto, 'activo', None)
     if activo_val is None:
-        estado_str = str(_prod_first_attr(producto, ['get_estado_display', 'estado', 'estatus'], 'Activo'))
+        estado_str = _prod_safe_str(_prod_first_attr(producto, ['get_estado_display', 'estado', 'estatus'], 'Activo'), 'Activo')
         es_activo = estado_str.lower() not in ('inactivo', 'agotado', 'false', '0')
     else:
         es_activo = bool(activo_val)
         estado_str = 'Activo' if es_activo else 'Inactivo'
 
-    stock_val = _prod_first_attr(producto, ['stock', 'cantidad', 'existencia', 'inventario'], 0)
-    precio_val = _prod_first_attr(producto, ['precio', 'precio_venta', 'precio_unitario'], 0)
-    sku_val = _prod_first_attr(producto, ['sku', 'codigo', 'referencia', 'clave'], f'DS-{producto.pk:04d}')
-    desc_val = _prod_first_attr(producto, ['descripcion', 'detalle', 'notas', 'observaciones'], '')
+    raw_stock = _prod_first_attr(producto, ['stock', 'cantidad', 'existencia', 'inventario'], 0)
+    try:
+        stock_val = int(raw_stock or 0)
+    except Exception:
+        stock_val = 0
+
+    raw_precio = _prod_first_attr(producto, ['precio', 'precio_venta', 'precio_unitario'], 0)
+    try:
+        precio_fmt = f"{_ProdDecimal(str(raw_precio or 0)):,.2f}"
+    except Exception:
+        precio_fmt = "0.00"
+
+    sku_val = _prod_safe_str(_prod_first_attr(producto, ['sku', 'codigo', 'referencia', 'clave'], ''), f'DS-{producto.pk:04d}')
+    desc_val = _prod_safe_str(_prod_first_attr(producto, ['descripcion', 'detalle', 'notas', 'observaciones'], ''), '')
+
     fecha_val = _prod_first_attr(producto, ['fecha_creacion', 'created_at', 'fecha_registro', 'actualizado'], None)
+    fecha_fmt = ''
+    if fecha_val:
+        try:
+            fecha_fmt = fecha_val.strftime('%d/%m/%Y %H:%M')
+        except Exception:
+            fecha_fmt = _prod_safe_str(fecha_val, '')
 
-    colores_qs = ProductoColor.objects.filter(producto=producto).order_by('orden', 'id')
     colores_list = []
+    try:
+        colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
+    except Exception:
+        try:
+            from django.core.management import call_command
+            call_command('migrate', 'productos', interactive=False, verbosity=0)
+            colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
+        except Exception:
+            colores_qs = []
 
-    if colores_qs.exists():
-        # Si el producto tiene imagen base y a?n no est? incluida como variante, la mostramos primero como "Cl?sico"
+    if colores_qs:
         if img_url:
             colores_list.append({
                 'id': 0,
@@ -412,22 +464,26 @@ def _build_producto_editorial_data(producto):
                 'codigo_hex': '#e8e4dc',
                 'imagen_url': img_url,
                 'stock': stock_val,
-                'es_principal': True,
+                'delete_url': '',
             })
         for c in colores_qs:
             c_img = ''
-            if c.imagen:
-                try:
+            try:
+                if c.imagen and getattr(c.imagen, 'name', ''):
                     c_img = c.imagen.url
-                except Exception:
-                    c_img = ''
+            except Exception:
+                c_img = ''
+            try:
+                del_url = _prod_reverse('productos:eliminar_color', args=[c.id])
+            except Exception:
+                del_url = f'/productos/colores/{c.id}/eliminar/'
             colores_list.append({
                 'id': c.id,
-                'nombre': c.nombre,
-                'codigo_hex': c.codigo_hex or '#1c1c1c',
+                'nombre': _prod_safe_str(c.nombre, 'Variante'),
+                'codigo_hex': _prod_safe_str(c.codigo_hex, '#1c1c1c'),
                 'imagen_url': c_img or img_url,
                 'stock': c.stock if c.stock else stock_val,
-                'es_principal': False,
+                'delete_url': del_url,
             })
     else:
         colores_list.append({
@@ -436,23 +492,40 @@ def _build_producto_editorial_data(producto):
             'codigo_hex': '#ebe7e0',
             'imagen_url': img_url,
             'stock': stock_val,
-            'es_principal': True,
+            'delete_url': '',
         })
+
+    try:
+        agregar_color_url = _prod_reverse('productos:agregar_color', args=[producto.pk])
+    except Exception:
+        agregar_color_url = f'/productos/{producto.pk}/colores/agregar/'
+
+    ventas_crear_url = _prod_safe_reverse(
+        ['ventas:crear', 'ventas:nueva', 'ventas:venta_crear', 'ventas:crear_venta', 'ventas:lista'],
+        '/ventas/',
+    )
+    catalogo_url = _prod_safe_reverse(
+        ['productos:lista', 'productos:index', 'productos:productos', 'productos:catalogo'],
+        '/productos/',
+    )
 
     return {
         'empresa_nombre': empresa_nombre,
+        'ventas_crear_url': ventas_crear_url,
+        'agregar_color_url': agregar_color_url,
+        'catalogo_url': catalogo_url,
         'prod_info': {
             'id': producto.pk,
-            'nombre': _prod_first_attr(producto, ['nombre', 'titulo'], f'Producto #{producto.pk}'),
-            'categoria': _prod_first_attr(cat_obj, ['nombre'], str(cat_obj) if cat_obj else 'Colecci?n Exclusiva'),
-            'proveedor': _prod_first_attr(prov_obj, ['nombre', 'razon_social'], str(prov_obj) if prov_obj else empresa_nombre.title()),
-            'precio': precio_val,
+            'nombre': _prod_safe_str(_prod_first_attr(producto, ['nombre', 'titulo'], ''), f'Producto #{producto.pk}'),
+            'categoria': cat_nombre,
+            'proveedor': prov_nombre,
+            'precio_fmt': precio_fmt,
             'stock': stock_val,
             'es_activo': es_activo,
             'estado': estado_str,
             'sku': sku_val,
             'descripcion': desc_val,
-            'fecha_registro': fecha_val,
+            'fecha_fmt': fecha_fmt,
             'imagen_url': img_url,
         },
         'colores_list': colores_list,

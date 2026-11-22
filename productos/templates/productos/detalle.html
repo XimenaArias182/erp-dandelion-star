@@ -26,7 +26,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* BARRA SUPERIOR EDITORIAL (ESTILO BOUTIQUE DE LUJO) */
         .ds-top-nav {
             position: sticky;
             top: 0;
@@ -72,7 +71,6 @@
             white-space: nowrap;
         }
 
-        /* BREADCRUMBS */
         .ds-breadcrumbs {
             padding: 0.85rem 2.2rem;
             font-size: 0.72rem;
@@ -88,7 +86,6 @@
         }
         .ds-breadcrumbs a:hover { color: var(--text-dark); }
 
-        /* ALERTAS DJANGO */
         .ds-messages {
             padding: 0 2.2rem;
             margin-bottom: 0.5rem;
@@ -102,7 +99,6 @@
             margin-bottom: 0.5rem;
         }
 
-        /* CONTENEDOR PRINCIPAL DE 2 COLUMNAS */
         .ds-product-layout {
             display: grid;
             grid-template-columns: 1.18fr 0.82fr;
@@ -110,7 +106,6 @@
             border-top: 1px solid var(--border-hairline);
         }
 
-        /* COLUMNA IZQUIERDA: ESCENARIO DE FOTOGRAF?A */
         .ds-stage {
             background: var(--bg-stage);
             display: flex;
@@ -135,9 +130,7 @@
             mix-blend-mode: multiply;
             transition: opacity 0.28s ease, transform 0.35s ease;
         }
-        .ds-main-img:hover {
-            transform: scale(1.03);
-        }
+        .ds-main-img:hover { transform: scale(1.03); }
         .ds-no-img {
             width: 320px;
             height: 320px;
@@ -169,16 +162,13 @@
             justify-content: center;
             transition: border-color 0.2s ease;
         }
-        .ds-thumb-btn.active, .ds-thumb-btn:hover {
-            border-color: #141414;
-        }
+        .ds-thumb-btn.active, .ds-thumb-btn:hover { border-color: #141414; }
         .ds-thumb-btn img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
 
-        /* COLUMNA DERECHA: FICHA DE PRODUCTO */
         .ds-details {
             background: #ffffff;
             padding: 3rem 4rem 4rem 3.5rem;
@@ -210,10 +200,7 @@
             color: var(--text-dark);
         }
 
-        /* SELECTOR DE COLORES */
-        .ds-color-section {
-            margin-bottom: 1.4rem;
-        }
+        .ds-color-section { margin-bottom: 1.4rem; }
         .ds-color-label-row {
             display: flex;
             justify-content: space-between;
@@ -225,9 +212,7 @@
             font-weight: 600;
             margin-right: 0.5rem;
         }
-        .ds-color-active-name {
-            color: var(--text-muted);
-        }
+        .ds-color-active-name { color: var(--text-muted); }
         .ds-add-color-trigger {
             background: none;
             border: none;
@@ -265,7 +250,6 @@
         }
         .ds-swatch:hover { transform: scale(1.08); }
 
-        /* FILA DE DISPONIBILIDAD / STOCK (ESTILO FILA DE TALLA) */
         .ds-spec-row {
             display: flex;
             justify-content: space-between;
@@ -292,7 +276,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* BOT?N PRINCIPAL NEGRO */
         .ds-cta-primary {
             display: block;
             width: 100%;
@@ -310,9 +293,7 @@
             transition: background 0.2s ease;
             margin-bottom: 0.65rem;
         }
-        .ds-cta-primary:hover {
-            background: #333333;
-        }
+        .ds-cta-primary:hover { background: #333333; }
         .ds-cta-secondary {
             display: block;
             width: 100%;
@@ -328,17 +309,10 @@
             border: 1px solid #d6d6d6;
             margin-bottom: 1.8rem;
         }
-        .ds-cta-secondary:hover {
-            border-color: #1c1c1c;
-        }
+        .ds-cta-secondary:hover { border-color: #1c1c1c; }
 
-        /* ACORDEONES DESPLEGABLES */
-        .ds-accordion-list {
-            border-top: 1px solid var(--border-hairline);
-        }
-        .ds-accordion-item {
-            border-bottom: 1px solid var(--border-hairline);
-        }
+        .ds-accordion-list { border-top: 1px solid var(--border-hairline); }
+        .ds-accordion-item { border-bottom: 1px solid var(--border-hairline); }
         .ds-accordion-btn {
             width: 100%;
             background: none;
@@ -361,23 +335,18 @@
             line-height: 1.6;
             color: var(--text-muted);
         }
-        .ds-accordion-item.open .ds-accordion-panel {
-            display: block;
-        }
+        .ds-accordion-item.open .ds-accordion-panel { display: block; }
         .ds-accordion-chevron {
             font-size: 0.85rem;
             transition: transform 0.2s ease;
         }
-        .ds-accordion-item.open .ds-accordion-chevron {
-            transform: rotate(90deg);
-        }
+        .ds-accordion-item.open .ds-accordion-chevron { transform: rotate(90deg); }
         .ds-detail-kv {
             display: flex;
             justify-content: space-between;
             padding: 0.25rem 0;
         }
 
-        /* MODAL PARA AGREGAR COLORES E IM?GENES */
         .ds-modal-backdrop {
             display: none;
             position: fixed;
@@ -460,27 +429,25 @@
 </head>
 <body>
 
-    <!-- BARRA SUPERIOR EDITORIAL CON NOMBRE DE EMPRESA -->
     <header class="ds-top-nav">
         <div class="ds-nav-left">
-            <a href="/productos/" class="ds-nav-link">&#9776; Cat&aacute;logo</a>
-            <a href="/productos/" class="ds-nav-link">&#128269; Buscar</a>
+            <a href="{{ catalogo_url }}" class="ds-nav-link">&#9776; Cat&aacute;logo</a>
+            <a href="{{ catalogo_url }}" class="ds-nav-link">&#128269; Buscar</a>
         </div>
-        <a href="/productos/" class="ds-brand-center">{{ empresa_nombre }}</a>
+        <a href="{{ catalogo_url }}" class="ds-brand-center">{{ empresa_nombre }}</a>
         <div class="ds-nav-right">
             {% if user.is_authenticated %}
             <button type="button" class="ds-nav-link" onclick="abrirModalColor()">+ Color</button>
-            <a href="/productos/editar/{{ prod_info.id }}/" class="ds-nav-link" onclick="irAEditar(event)">Editar</a>
+            <a href="/admin/productos/producto/{{ prod_info.id }}/change/" class="ds-nav-link">Editar</a>
             {% endif %}
-            <a href="{% url 'ventas:crear' %}" class="ds-nav-link">Vender</a>
+            <a href="{{ ventas_crear_url }}" class="ds-nav-link">Vender</a>
         </div>
     </header>
 
-    <!-- RUTA DE NAVEGACI?N -->
     <nav class="ds-breadcrumbs">
         <a href="/">Inicio</a>
         <span>/</span>
-        <a href="/productos/">Productos</a>
+        <a href="{{ catalogo_url }}">Productos</a>
         <span>/</span>
         <span>{{ prod_info.categoria }}</span>
         <span>/</span>
@@ -495,10 +462,8 @@
     </div>
     {% endif %}
 
-    <!-- VITRINA DE 2 COLUMNAS -->
     <main class="ds-product-layout">
 
-        <!-- COLUMNA IZQUIERDA: FOTOGRAF?A DE ESTUDIO -->
         <section class="ds-stage">
             <div class="ds-main-img-wrap">
                 {% with first_color=colores_list.0 %}
@@ -529,7 +494,6 @@
             {% endif %}
         </section>
 
-        <!-- COLUMNA DERECHA: INFORMACI?N Y SELECTOR DE COLORES -->
         <section class="ds-details">
             <div class="ds-prod-header">
                 <div>
@@ -538,9 +502,8 @@
                 </div>
             </div>
 
-            <div class="ds-prod-price">${{ prod_info.precio|floatformat:2 }}</div>
+            <div class="ds-prod-price">${{ prod_info.precio_fmt }}</div>
 
-            <!-- SELECTOR DE COLOR -->
             <div class="ds-color-section">
                 <div class="ds-color-label-row">
                     <div>
@@ -570,7 +533,6 @@
                 </div>
             </div>
 
-            <!-- FILA DE DISPONIBILIDAD / STOCK -->
             <div class="ds-spec-row">
                 <div class="ds-spec-left">
                     <strong>Disponibilidad</strong>
@@ -584,11 +546,9 @@
                 <span>Marca: {{ empresa_nombre }}</span>
             </div>
 
-            <!-- BOTONES DE ACCI?N -->
-            <a href="{% url 'ventas:crear' %}" class="ds-cta-primary">Registrar Venta</a>
-            <a href="/productos/" class="ds-cta-secondary">Volver al Cat&aacute;logo</a>
+            <a href="{{ ventas_crear_url }}" class="ds-cta-primary">Registrar Venta</a>
+            <a href="{{ catalogo_url }}" class="ds-cta-secondary">Volver al Cat&aacute;logo</a>
 
-            <!-- ACORDEONES DE DETALLES -->
             <div class="ds-accordion-list">
                 <div class="ds-accordion-item open">
                     <button type="button" class="ds-accordion-btn" onclick="toggleAccordion(this)">
@@ -602,8 +562,8 @@
                         <div class="ds-detail-kv"><span>Categor&iacute;a</span><strong>{{ prod_info.categoria }}</strong></div>
                         <div class="ds-detail-kv"><span>Proveedor / Colecci&oacute;n</span><strong>{{ prod_info.proveedor }}</strong></div>
                         <div class="ds-detail-kv"><span>Estado</span><strong>{{ prod_info.estado }}</strong></div>
-                        {% if prod_info.fecha_registro %}
-                        <div class="ds-detail-kv"><span>Registrado</span><span>{{ prod_info.fecha_registro|date:"d/m/Y H:i" }}</span></div>
+                        {% if prod_info.fecha_fmt %}
+                        <div class="ds-detail-kv"><span>Registrado</span><span>{{ prod_info.fecha_fmt }}</span></div>
                         {% endif %}
                     </div>
                 </div>
@@ -622,8 +582,8 @@
                             </span>
                             <span>
                                 {{ col.stock }} uds.
-                                {% if user.is_authenticated and col.id %}
-                                <form method="post" action="{% url 'productos:eliminar_color' col.id %}" style="display:inline;margin-left:0.5rem;">
+                                {% if user.is_authenticated and col.delete_url %}
+                                <form method="post" action="{{ col.delete_url }}" style="display:inline;margin-left:0.5rem;">
                                     {% csrf_token %}
                                     <button type="submit" style="background:none;border:none;color:#a62626;cursor:pointer;font-size:0.75rem;" title="Quitar color">&times;</button>
                                 </form>
@@ -657,7 +617,6 @@
         </section>
     </main>
 
-    <!-- MODAL PARA AGREGAR NUEVO COLOR E IMAGEN -->
     {% if user.is_authenticated %}
     <div class="ds-modal-backdrop" id="ds-color-modal">
         <div class="ds-modal-card">
@@ -665,7 +624,7 @@
                 <h3>Agregar color al producto</h3>
                 <button type="button" class="ds-modal-close" onclick="cerrarModalColor()">&times;</button>
             </div>
-            <form method="post" action="{% url 'productos:agregar_color' prod_info.id %}" enctype="multipart/form-data">
+            <form method="post" action="{{ agregar_color_url }}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="ds-field">
                     <label for="id_col_nombre">Nombre del color</label>
@@ -753,11 +712,6 @@
             const nameInput = document.getElementById('id_col_nombre');
             if (hexInput) hexInput.value = hex;
             if (nameInput && !nameInput.value.trim()) nameInput.value = label;
-        }
-
-        function irAEditar(e) {
-            e.preventDefault();
-            window.location.href = '/admin/productos/producto/{{ prod_info.id }}/change/';
         }
     </script>
 </body>
