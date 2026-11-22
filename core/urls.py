@@ -53,3 +53,9 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += [re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})]
+
+from django.urls import re_path as _media_re_path
+from core.media_serve import serve_media_file as _serve_media_file
+urlpatterns = [
+    _media_re_path(r'^media/(?P<path>.*)$', _serve_media_file),
+] + urlpatterns
