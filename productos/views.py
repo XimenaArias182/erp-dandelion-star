@@ -398,6 +398,29 @@ def _resolve_producto_obj(pk=None, id=None, producto_id=None, slug=None):
     raise _ProdHttp404('Producto no encontrado')
 
 
+def _extract_color_image_url(color_obj, fallback_url=''):
+    for fname in ('imagen', 'foto', 'image', 'imagen_principal'):
+        try:
+            fval = getattr(color_obj, fname, None)
+            if fval and getattr(fval, 'name', ''):
+                return fval.url
+        except Exception:
+            continue
+    # Si las imágenes del color están en un modelo relacionado (ej. imagenes)
+    for rel_name in ('imagenes', 'fotos', 'images', 'productoimagen_set'):
+        try:
+            rel_mgr = getattr(color_obj, rel_name, None)
+            if rel_mgr is not None and hasattr(rel_mgr, 'all'):
+                for item in rel_mgr.all():
+                    for fname in ('imagen', 'foto', 'image'):
+                        fval = getattr(item, fname, None)
+                        if fval and getattr(fval, 'name', ''):
+                            return fval.url
+        except Exception:
+            continue
+    return fallback_url
+
+
 def _build_producto_editorial_data(producto):
     from configuracion.models import ConfiguracionERP
     from .models import ProductoColor
@@ -461,21 +484,24 @@ def _build_producto_editorial_data(producto):
         except Exception:
             fecha_fmt = _prod_safe_str(fecha_val, '')
 
-    colores_list = []
+    color_model_fields = {f.name for f in ProductoColor._meta.get_fields()}
+    order_fields = [f for f in ('orden', 'id') if f in color_model_fields] or ['pk']
+
     colores_qs = []
     try:
-        colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
+        colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by(*order_fields))
     except Exception:
         try:
             _prod_connection.close()
             from django.core.management import call_command
             call_command('migrate', 'productos', interactive=False, verbosity=0)
             _prod_connection.close()
-            colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by('orden', 'id'))
+            colores_qs = list(ProductoColor.objects.filter(producto=producto).order_by(*order_fields))
         except Exception:
             _prod_connection.close()
             colores_qs = []
 
+    colores_list = []
     if colores_qs:
         if img_url:
             colores_list.append({
@@ -487,22 +513,25 @@ def _build_producto_editorial_data(producto):
                 'delete_url': '',
             })
         for c in colores_qs:
-            c_img = ''
-            try:
-                if c.imagen and getattr(c.imagen, 'name', ''):
-                    c_img = c.imagen.url
-            except Exception:
-                c_img = ''
+            c_nombre = _prod_safe_str(_prod_first_attr(c, ['nombre', 'color', 'titulo', 'name'], ''), 'Variante')
+            c_hex = _prod_safe_str(_prod_first_attr(c, ['codigo_hex', 'hex', 'color_hex', 'codigo'], ''), '#1c1c1c')
+            if c_hex and not c_hex.startswith('#'):
+                c_hex = f'#{c_hex}'
+            c_img = _extract_color_image_url(c, img_url)
+            c_stock_raw = _prod_first_attr(c, ['stock', 'cantidad', 'existencia'], None)
+            c_stock = c_stock_raw if c_stock_raw not in (None, '') else stock_val
+
             try:
                 del_url = _prod_reverse('productos:eliminar_color', args=[c.id])
             except Exception:
                 del_url = f'/productos/colores/{c.id}/eliminar/'
+
             colores_list.append({
                 'id': c.id,
-                'nombre': _prod_safe_str(c.nombre, 'Variante'),
-                'codigo_hex': _prod_safe_str(c.codigo_hex, '#1c1c1c'),
-                'imagen_url': c_img or img_url,
-                'stock': c.stock if c.stock else stock_val,
+                'nombre': c_nombre,
+                'codigo_hex': c_hex or '#1c1c1c',
+                'imagen_url': c_img,
+                'stock': c_stock,
                 'delete_url': del_url,
             })
     else:
@@ -601,6 +630,8 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
     producto = _resolve_producto_obj(pk=pk, id=id, producto_id=producto_id)
     nombre = (request.POST.get('nombre') or '').strip()
     codigo_hex = (request.POST.get('codigo_hex') or '#1c1c1c').strip()
+    if not codigo_hex.startswith('#'):
+        codigo_hex = f'#{codigo_hex}'
     imagen = request.FILES.get('imagen')
     try:
         stock = max(0, int(request.POST.get('stock') or 0))
@@ -611,26 +642,36 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
         _prod_messages.error(request, 'Escribe el nombre del color.')
         return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
 
+    color_fields = {f.name for f in ProductoColor._meta.get_fields()}
+    create_kwargs = {'producto': producto}
+
+    for fname in ('nombre', 'color', 'titulo', 'name'):
+        if fname in color_fields:
+            create_kwargs[fname] = nombre
+            break
+
+    for fname in ('codigo_hex', 'hex', 'color_hex', 'codigo'):
+        if fname in color_fields:
+            create_kwargs[fname] = codigo_hex
+            break
+
+    if imagen:
+        for fname in ('imagen', 'foto', 'image'):
+            if fname in color_fields:
+                create_kwargs[fname] = imagen
+                break
+
+    if 'stock' in color_fields:
+        create_kwargs['stock'] = stock
+
     try:
-        ProductoColor.objects.create(
-            producto=producto,
-            nombre=nombre,
-            codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
-            imagen=imagen,
-            stock=stock,
-        )
+        ProductoColor.objects.create(**create_kwargs)
     except Exception:
         _prod_connection.close()
         from django.core.management import call_command
         call_command('migrate', 'productos', interactive=False, verbosity=0)
         _prod_connection.close()
-        ProductoColor.objects.create(
-            producto=producto,
-            nombre=nombre,
-            codigo_hex=codigo_hex if codigo_hex.startswith('#') else f'#{codigo_hex}',
-            imagen=imagen,
-            stock=stock,
-        )
+        ProductoColor.objects.create(**create_kwargs)
 
     _prod_messages.success(request, f'Color "{nombre}" agregado a {producto}.')
     return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
@@ -642,7 +683,7 @@ def eliminar_color_producto(request, color_id: int):
     from .models import ProductoColor
     color = _prod_get_object_or_404(ProductoColor, pk=color_id)
     prod_pk = color.producto_id
-    nombre = color.nombre
+    nombre = _prod_safe_str(_prod_first_attr(color, ['nombre', 'color', 'titulo'], ''), 'Color')
     color.delete()
     _prod_messages.success(request, f'Color "{nombre}" eliminado.')
     return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{prod_pk}/')
