@@ -340,6 +340,7 @@ def api_catalogo_variantes(request):
 
 # === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
 import traceback as _prod_traceback
+import unicodedata as _prod_unicodedata
 from decimal import Decimal as _ProdDecimal
 from django.contrib import messages as _prod_messages
 from django.contrib.auth.decorators import login_required as _prod_login_required
@@ -348,6 +349,143 @@ from django.http import Http404 as _ProdHttp404
 from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
 from django.urls import reverse as _prod_reverse
 from django.views.decorators.http import require_POST as _prod_require_POST
+
+
+_COLOR_KEYWORDS = [
+    ('azul marino', '#1b2f4f'),
+    ('navy', '#1b2f4f'),
+    ('azul cielo', '#7ec8e3'),
+    ('celeste', '#7ec8e3'),
+    ('azul rey', '#1e4fa3'),
+    ('cobalto', '#1e4fa3'),
+    ('turquesa', '#30b5ad'),
+    ('aguamarina', '#66cdAA'),
+    ('menta', '#76c7a8'),
+    ('palo de rosa', '#d49a9e'),
+    ('oro rosa', '#d8a48f'),
+    ('rose gold', '#d8a48f'),
+    ('blanco perla', '#f7f5f0'),
+    ('off white', '#f5f2eb'),
+    ('marfil', '#f5f0e1'),
+    ('ivory', '#f5f0e1'),
+    ('crema', '#f3ead8'),
+    ('cream', '#f3ead8'),
+    ('crudo', '#ede4d3'),
+    ('verde esmeralda', '#1f6f50'),
+    ('esmeralda', '#1f6f50'),
+    ('verde oliva', '#6b7c45'),
+    ('oliva', '#6b7c45'),
+    ('salvia', '#8fa387'),
+    ('verde bosque', '#214a36'),
+    ('gris claro', '#c4c7ce'),
+    ('gris oscuro', '#4a4d52'),
+    ('grafito', '#3d4045'),
+    ('antracita', '#383b40'),
+    ('negro', '#141414'),
+    ('black', '#141414'),
+    ('noir', '#141414'),
+    ('onyx', '#181818'),
+    ('blanco', '#f8f7f4'),
+    ('white', '#f8f7f4'),
+    ('perla', '#f4f1ea'),
+    ('latte', '#d6c1a9'),
+    ('beige', '#dfd1be'),
+    ('arena', '#dccbb4'),
+    ('sand', '#dccbb4'),
+    ('nude', '#e3c6b2'),
+    ('camel', '#b88b58'),
+    ('taupe', '#9c8b7e'),
+    ('topo', '#8f7f73'),
+    ('capuchino', '#a68265'),
+    ('champagne', '#e6d5b8'),
+    ('champan', '#e6d5b8'),
+    ('cafe', '#63412c'),
+    ('marron', '#6b442a'),
+    ('brown', '#6b442a'),
+    ('chocolate', '#4a2c1d'),
+    ('cacao', '#543322'),
+    ('cognac', '#8f4722'),
+    ('conac', '#8f4722'),
+    ('canela', '#9c5a33'),
+    ('bronce', '#8c6239'),
+    ('dorado', '#c9a24b'),
+    ('oro', '#c9a24b'),
+    ('gold', '#c9a24b'),
+    ('plateado', '#c5c8ce'),
+    ('plata', '#c5c8ce'),
+    ('silver', '#c5c8ce'),
+    ('acero', '#9da3ab'),
+    ('gris', '#858990'),
+    ('gray', '#858990'),
+    ('grey', '#858990'),
+    ('vino', '#6e1b29'),
+    ('burdeos', '#6e1b29'),
+    ('burgundy', '#6e1b29'),
+    ('tinto', '#731d2c'),
+    ('guinda', '#7a1f30'),
+    ('granate', '#7d2027'),
+    ('marsala', '#8c3b44'),
+    ('terracota', '#b55239'),
+    ('rojo', '#b82025'),
+    ('red', '#b82025'),
+    ('carmesi', '#a81c24'),
+    ('cereza', '#9e1b24'),
+    ('coral', '#e06d53'),
+    ('salmon', '#eb8c78'),
+    ('fucsia', '#c92a76'),
+    ('fuchsia', '#c92a76'),
+    ('magenta', '#c42b78'),
+    ('rosa', '#e8a5b5'),
+    ('pink', '#e8a5b5'),
+    ('blush', '#ecc0c9'),
+    ('azul', '#255499'),
+    ('blue', '#255499'),
+    ('verde', '#2b6e4b'),
+    ('green', '#2b6e4b'),
+    ('amarillo', '#e3b938'),
+    ('yellow', '#e3b938'),
+    ('mostaza', '#c99a2e'),
+    ('miel', '#d49b35'),
+    ('naranja', '#db6a2c'),
+    ('orange', '#db6a2c'),
+    ('durazno', '#f0a882'),
+    ('peach', '#f0a882'),
+    ('cobre', '#b35932'),
+    ('morado', '#6e448a'),
+    ('purple', '#6e448a'),
+    ('violeta', '#7c4d99'),
+    ('lila', '#bfa3d4'),
+    ('lilac', '#bfa3d4'),
+    ('lavanda', '#c6b4d8'),
+    ('ciruela', '#5c2c52'),
+    ('uva', '#5e315b'),
+]
+
+
+def _normalize_color_label(text: str) -> str:
+    raw = str(text or '').strip().lower()
+    norm = _prod_unicodedata.normalize('NFD', raw)
+    return ''.join(ch for ch in norm if _prod_unicodedata.category(ch) != 'Mn')
+
+
+def _infer_hex_from_color_name(nombre: str, stored_hex: str = '') -> str:
+    clean_hex = str(stored_hex or '').strip()
+    if clean_hex and not clean_hex.startswith('#'):
+        clean_hex = f'#{clean_hex}'
+
+    norm_name = _normalize_color_label(nombre)
+    is_explicit_black = any(w in norm_name for w in ('negro', 'black', 'noir', 'onyx', 'carbon'))
+
+    # Si ya existe un color personalizado distinto al valor por defecto, conservarlo
+    if re.match(r'^#[0-9a-fA-F]{6}$', clean_hex):
+        if clean_hex.lower() not in ('#1c1c1c', '#000000') or is_explicit_black:
+            return clean_hex
+
+    for kw, hex_val in _COLOR_KEYWORDS:
+        if kw in norm_name:
+            return hex_val
+
+    return clean_hex if re.match(r'^#[0-9a-fA-F]{6}$', clean_hex) else '#c8bca9'
 
 
 def _prod_safe_reverse(names, fallback='/'):
@@ -406,7 +544,6 @@ def _extract_color_image_url(color_obj, fallback_url=''):
                 return fval.url
         except Exception:
             continue
-    # Si las imágenes del color están en un modelo relacionado (ej. imagenes)
     for rel_name in ('imagenes', 'fotos', 'images', 'productoimagen_set'):
         try:
             rel_mgr = getattr(color_obj, rel_name, None)
@@ -507,16 +644,18 @@ def _build_producto_editorial_data(producto):
             colores_list.append({
                 'id': 0,
                 'nombre': 'Original',
-                'codigo_hex': '#e8e4dc',
+                'codigo_hex': '#efeae1',
                 'imagen_url': img_url,
                 'stock': stock_val,
                 'delete_url': '',
             })
         for c in colores_qs:
             c_nombre = _prod_safe_str(_prod_first_attr(c, ['nombre', 'color', 'titulo', 'name'], ''), 'Variante')
-            c_hex = _prod_safe_str(_prod_first_attr(c, ['codigo_hex', 'hex', 'color_hex', 'codigo'], ''), '#1c1c1c')
-            if c_hex and not c_hex.startswith('#'):
-                c_hex = f'#{c_hex}'
+            raw_c_hex = _prod_safe_str(
+                _prod_first_attr(c, ['codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'], ''),
+                '',
+            )
+            c_hex = _infer_hex_from_color_name(c_nombre, raw_c_hex)
             c_img = _extract_color_image_url(c, img_url)
             c_stock_raw = _prod_first_attr(c, ['stock', 'cantidad', 'existencia'], None)
             c_stock = c_stock_raw if c_stock_raw not in (None, '') else stock_val
@@ -529,7 +668,7 @@ def _build_producto_editorial_data(producto):
             colores_list.append({
                 'id': c.id,
                 'nombre': c_nombre,
-                'codigo_hex': c_hex or '#1c1c1c',
+                'codigo_hex': c_hex,
                 'imagen_url': c_img,
                 'stock': c_stock,
                 'delete_url': del_url,
@@ -538,7 +677,7 @@ def _build_producto_editorial_data(producto):
         colores_list.append({
             'id': 0,
             'nombre': 'Único / Original',
-            'codigo_hex': '#ebe7e0',
+            'codigo_hex': '#efeae1',
             'imagen_url': img_url,
             'stock': stock_val,
             'delete_url': '',
@@ -614,7 +753,7 @@ def producto_detalle_editorial(request, pk=None, id=None, producto_id=None, slug
             'colores_list': [{
                 'id': 0,
                 'nombre': 'Original',
-                'codigo_hex': '#ebe7e0',
+                'codigo_hex': '#efeae1',
                 'imagen_url': '',
                 'stock': getattr(producto, 'stock', 0) or 0,
                 'delete_url': '',
@@ -629,9 +768,8 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
     from .models import ProductoColor
     producto = _resolve_producto_obj(pk=pk, id=id, producto_id=producto_id)
     nombre = (request.POST.get('nombre') or '').strip()
-    codigo_hex = (request.POST.get('codigo_hex') or '#1c1c1c').strip()
-    if not codigo_hex.startswith('#'):
-        codigo_hex = f'#{codigo_hex}'
+    raw_hex = (request.POST.get('codigo_hex') or '').strip()
+    codigo_hex = _infer_hex_from_color_name(nombre, raw_hex)
     imagen = request.FILES.get('imagen')
     try:
         stock = max(0, int(request.POST.get('stock') or 0))
@@ -650,7 +788,7 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
             create_kwargs[fname] = nombre
             break
 
-    for fname in ('codigo_hex', 'hex', 'color_hex', 'codigo'):
+    for fname in ('codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'):
         if fname in color_fields:
             create_kwargs[fname] = codigo_hex
             break
