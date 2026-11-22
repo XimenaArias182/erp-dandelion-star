@@ -148,8 +148,8 @@ from .models import Venta as _Venta
 
 @_login_required
 def venta_pdf(request, venta_id: int) -> _HttpResponse:
-    import weasyprint
     from datetime import date
+    from io import BytesIO as _BytesIO
     from configuracion.models import ConfiguracionERP
 
     venta = _get_object_or_404(
@@ -172,14 +172,26 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         request=request,
     )
 
-    pdf_bytes = weasyprint.HTML(
-        string=html_string,
-        base_url=request.build_absolute_uri('/'),
-    ).write_pdf()
+    try:
+        import weasyprint
+        pdf_bytes = weasyprint.HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri('/'),
+        ).write_pdf()
+    except (ImportError, OSError):
+        from xhtml2pdf import pisa
+        pdf_buffer = _BytesIO()
+        pisa_status = pisa.CreatePDF(
+            html_string,
+            dest=pdf_buffer,
+            encoding='utf-8',
+        )
+        if pisa_status.err:
+            return _HttpResponse('Error al generar el comprobante PDF.', status=500)
+        pdf_bytes = pdf_buffer.getvalue()
 
     response = _HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = (
         f'attachment; filename="factura_{venta.pk:05d}.pdf"'
     )
     return response
-
