@@ -164,6 +164,14 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     config = ConfiguracionERP.get_instance()
 
+    def _clean_text(val) -> str:
+        if val in (None, ''):
+            return ''
+        txt = str(val).strip()
+        if txt in ('?', '—', '–', 'None'):
+            return ''
+        return txt.replace('\ufffd', '')
+
     def _first_attr(obj, names, default=''):
         if not obj:
             return default
@@ -175,7 +183,12 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
                 except Exception:
                     val = None
             if val not in (None, ''):
-                return val
+                if isinstance(val, str):
+                    cleaned = _clean_text(val)
+                    if cleaned:
+                        return cleaned
+                else:
+                    return val
         return default
 
     def _make_round_gold_logo(raw_bytes: bytes) -> str:
@@ -195,7 +208,6 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             center = canvas_size // 2
             im = im.resize((inner_size, inner_size), resampling)
 
-            # M?scara circular suavizada
             scale = 4
             big_mask = Image.new('L', (inner_size * scale, inner_size * scale), 0)
             ImageDraw.Draw(big_mask).ellipse(
@@ -204,10 +216,8 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             )
             circle_mask = big_mask.resize((inner_size, inner_size), resampling)
 
-            # Lienzo blanco puro para evitar artefactos alfa en PDF
             base_white = Image.new('RGBA', (canvas_size, canvas_size), (255, 255, 255, 255))
 
-            # Resplandor dorado exterior
             glow_layer = Image.new('RGBA', (canvas_size, canvas_size), (0, 0, 0, 0))
             glow_draw = ImageDraw.Draw(glow_layer)
             r_outer = inner_size // 2 + 18
@@ -222,7 +232,6 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             )
             glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=10))
 
-            # Aro dorado met?lico alrededor del c?rculo
             ring_layer = Image.new('RGBA', (canvas_size * scale, canvas_size * scale), (0, 0, 0, 0))
             ring_draw = ImageDraw.Draw(ring_layer)
             c_big = center * scale
@@ -249,7 +258,6 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         except Exception:
             return f"data:image/png;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
 
-    # Buscar logo en ConfiguracionERP o en archivos est?ticos del proyecto
     logo_data_uri = ''
     for field_name in ('logo', 'imagen', 'logo_empresa', 'icono'):
         logo_field = getattr(config, field_name, None)
@@ -286,13 +294,19 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
     else:
         nombre_empresa = raw_nombre
 
+    raw_dir = str(_first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], '')).strip()
+    if not raw_dir or '?' in raw_dir:
+        direccion_empresa = 'Celaya, Guanajuato, México'
+    else:
+        direccion_empresa = raw_dir
+
     empresa = {
         'nombre': nombre_empresa,
-        'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif']),
-        'direccion': _first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], 'Celaya, Guanajuato, M?xico'),
-        'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais']),
-        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], '?'),
-        'email': _first_attr(config, ['email', 'correo', 'correo_electronico']),
+        'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif'], ''),
+        'direccion': direccion_empresa,
+        'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais'], ''),
+        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], ''),
+        'email': _first_attr(config, ['email', 'correo', 'correo_electronico'], ''),
         'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web'], 'erp-dandelion-star.onrender.com'),
         'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '$'),
         'logo_data_uri': logo_data_uri,
@@ -300,11 +314,11 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
 
     cliente_obj = getattr(venta, 'cliente', None)
     cliente_info = {
-        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'P?blico en General'),
-        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], '?'),
-        'email': _first_attr(cliente_obj, ['email', 'correo'], '?'),
-        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], '?'),
-        'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id']),
+        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'Público en General'),
+        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], ''),
+        'email': _first_attr(cliente_obj, ['email', 'correo'], ''),
+        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], ''),
+        'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id'], ''),
     }
 
     items_pdf = []
@@ -324,8 +338,8 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
             'num': idx,
             'cantidad': getattr(d, 'cantidad', 1),
             'nombre': _first_attr(prod, ['nombre', 'titulo'], f'Producto #{idx}'),
-            'sku': _first_attr(prod, ['sku', 'codigo', 'referencia']),
-            'categoria': _first_attr(cat_obj, ['nombre'], str(cat_obj) if cat_obj else ''),
+            'sku': _first_attr(prod, ['sku', 'codigo', 'referencia'], ''),
+            'categoria': _first_attr(cat_obj, ['nombre'], _clean_text(cat_obj) if cat_obj else ''),
             'precio_unitario': precio,
             'subtotal': sub,
         })
@@ -350,6 +364,9 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
     if isinstance(fecha_op, date) and not isinstance(fecha_op, datetime):
         fecha_op = datetime(fecha_op.year, fecha_op.month, fecha_op.day)
 
+    lugar_raw = _first_attr(venta, ['sucursal', 'ubicacion', 'lugar'], '')
+    lugar_final = direccion_empresa if (not lugar_raw or '?' in str(lugar_raw)) else lugar_raw
+
     venta_info = {
         'folio': f"{venta.pk:05d}",
         'fecha': fecha_op,
@@ -357,9 +374,9 @@ def venta_pdf(request, venta_id: int) -> _HttpResponse:
         'mes': fecha_op.strftime('%m'),
         'anio': fecha_op.strftime('%Y'),
         'hora': fecha_op.strftime('%H:%M'),
-        'lugar': _first_attr(venta, ['sucursal', 'ubicacion', 'lugar']) or empresa['direccion'],
+        'lugar': lugar_final,
         'metodo_pago': _first_attr(venta, ['get_metodo_pago_display', 'metodo_pago', 'forma_pago'], 'Contado'),
-        'notas': _first_attr(venta, ['notas', 'observaciones', 'comentarios']),
+        'notas': _first_attr(venta, ['notas', 'observaciones', 'comentarios'], ''),
         'subtotal': subtotal_final,
         'impuestos': impuestos_final,
         'descuento': descuento_final,
