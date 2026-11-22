@@ -340,6 +340,7 @@ def api_catalogo_variantes(request):
 
 # === VISTA EDITORIAL DE PRODUCTO CON VARIANTES DE COLOR E IMAGEN ===
 import traceback as _prod_traceback
+import unicodedata as _prod_unicodedata
 from decimal import Decimal as _ProdDecimal
 from django.contrib import messages as _prod_messages
 from django.contrib.auth.decorators import login_required as _prod_login_required
@@ -349,6 +350,157 @@ from django.http import Http404 as _ProdHttp404
 from django.shortcuts import get_object_or_404 as _prod_get_object_or_404, redirect as _prod_redirect, render as _prod_render
 from django.urls import reverse as _prod_reverse
 from django.views.decorators.http import require_POST as _prod_require_POST
+
+
+_NAMED_SHADES = [
+    ('brotes de invierno', '#7d9471'),
+    ('brote de invierno', '#7d9471'),
+    ('invierno', '#8fa399'),
+    ('azul marino', '#1b2f4f'),
+    ('navy', '#1b2f4f'),
+    ('azul cielo', '#7ec8e3'),
+    ('celeste', '#7ec8e3'),
+    ('turquesa', '#30b5ad'),
+    ('menta', '#76c7a8'),
+    ('salvia', '#8fa387'),
+    ('oliva', '#6b7c45'),
+    ('esmeralda', '#1f6f50'),
+    ('palo de rosa', '#d49a9e'),
+    ('oro rosa', '#d8a48f'),
+    ('blanco perla', '#f7f5f0'),
+    ('marfil', '#f5f0e1'),
+    ('ivory', '#f5f0e1'),
+    ('crema', '#f3ead8'),
+    ('negro', '#141414'),
+    ('black', '#141414'),
+    ('noir', '#141414'),
+    ('blanco', '#f8f7f4'),
+    ('white', '#f8f7f4'),
+    ('perla', '#f4f1ea'),
+    ('latte', '#d6c1a9'),
+    ('beige', '#dfd1be'),
+    ('arena', '#dccbb4'),
+    ('nude', '#e3c6b2'),
+    ('camel', '#b88b58'),
+    ('taupe', '#9c8b7e'),
+    ('cafe', '#63412c'),
+    ('marron', '#6b442a'),
+    ('chocolate', '#4a2c1d'),
+    ('cognac', '#8f4722'),
+    ('dorado', '#c9a24b'),
+    ('oro', '#c9a24b'),
+    ('gold', '#c9a24b'),
+    ('plateado', '#c5c8ce'),
+    ('plata', '#c5c8ce'),
+    ('silver', '#c5c8ce'),
+    ('gris', '#858990'),
+    ('vino', '#6e1b29'),
+    ('burdeos', '#6e1b29'),
+    ('tinto', '#731d2c'),
+    ('guinda', '#7a1f30'),
+    ('rojo', '#b82025'),
+    ('red', '#b82025'),
+    ('coral', '#e06d53'),
+    ('fucsia', '#c92a76'),
+    ('rosa', '#e8a5b5'),
+    ('pink', '#e8a5b5'),
+    ('azul', '#255499'),
+    ('blue', '#255499'),
+    ('verde', '#4f795b'),
+    ('green', '#4f795b'),
+    ('amarillo', '#e3b938'),
+    ('mostaza', '#c99a2e'),
+    ('naranja', '#db6a2c'),
+    ('durazno', '#f0a882'),
+    ('cobre', '#b35932'),
+    ('morado', '#6e448a'),
+    ('violeta', '#7c4d99'),
+    ('lila', '#bfa3d4'),
+    ('lavanda', '#c6b4d8'),
+]
+
+
+def _norm_color_text(text: str) -> str:
+    raw = str(text or '').strip().lower()
+    norm = _prod_unicodedata.normalize('NFD', raw)
+    return ''.join(ch for ch in norm if _prod_unicodedata.category(ch) != 'Mn')
+
+
+def _extract_dominant_hex_from_file(file_field) -> str:
+    if not file_field:
+        return ''
+    try:
+        file_path = getattr(file_field, 'path', '')
+        if not file_path or not os.path.isfile(file_path):
+            return ''
+        from PIL import Image
+        with Image.open(file_path) as im:
+            im = im.convert('RGB').resize((64, 64))
+            pixels = list(im.getdata())
+        # Ignorar el fondo blanco/gris claro típico de estudio
+        fg = [
+            (r, g, b) for (r, g, b) in pixels
+            if not (r > 232 and g > 232 and b > 232)
+            and not (abs(r - g) < 8 and abs(g - b) < 8 and r > 218)
+        ]
+        sample = fg if len(fg) >= 20 else pixels
+        if not sample:
+            return ''
+        avg_r = sum(p[0] for p in sample) // len(sample)
+        avg_g = sum(p[1] for p in sample) // len(sample)
+        avg_b = sum(p[2] for p in sample) // len(sample)
+        return f'#{avg_r:02x}{avg_g:02x}{avg_b:02x}'
+    except Exception:
+        return ''
+
+
+def _resolve_color_swatch_hex(color_obj, nombre: str, file_fields_list=()) -> str:
+    stored = ''
+    for fname in ('codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'):
+        val = getattr(color_obj, fname, None)
+        if val and str(val).strip():
+            stored = str(val).strip()
+            break
+
+    if stored and not stored.startswith('#'):
+        stored = f'#{stored}'
+
+    norm_name = _norm_color_text(nombre)
+    explicit_black = any(w in norm_name for w in ('negro', 'black', 'noir', 'carbon', 'onyx'))
+
+    if re.match(r'^#[0-9a-fA-F]{6}$', stored):
+        if stored.lower() not in ('#1c1c1c', '#000000') or explicit_black:
+            return stored
+
+    # 1. Intentar inferir por el nombre del color mencionado
+    inferred = ''
+    for kw, hex_val in _NAMED_SHADES:
+        if kw in norm_name:
+            inferred = hex_val
+            break
+
+    # 2. Si el nombre es poético/personalizado y tiene imagen propia, tomar el tono real de su foto
+    if not inferred:
+        for ff in file_fields_list:
+            extracted = _extract_dominant_hex_from_file(ff)
+            if extracted:
+                inferred = extracted
+                break
+
+    if not inferred:
+        inferred = '#8fa387' if 'brote' in norm_name else '#c9bca9'
+
+    # Guardar el tono inferido en el registro si el campo existe para mantenerlo consistente
+    try:
+        for fname in ('codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color'):
+            if hasattr(color_obj, fname):
+                setattr(color_obj, fname, inferred)
+                color_obj.save(update_fields=[fname])
+                break
+    except Exception:
+        pass
+
+    return inferred
 
 
 def _prod_safe_reverse(names, fallback='/'):
@@ -399,30 +551,28 @@ def _resolve_producto_obj(pk=None, id=None, producto_id=None, slug=None):
     raise _ProdHttp404('Producto no encontrado')
 
 
-def _get_all_file_urls_from_obj(obj):
-    urls = []
+def _get_all_file_objects_from_instance(obj):
+    items = []
     if not obj:
-        return urls
+        return items
     try:
         for f in obj._meta.get_fields():
             if isinstance(f, _ProdFileField):
                 try:
                     fval = getattr(obj, f.name, None)
                     if fval and getattr(fval, 'name', ''):
-                        u = fval.url
-                        if u and u not in urls:
-                            urls.append(u)
+                        items.append(fval)
                 except Exception:
                     continue
     except Exception:
         pass
-    return urls
+    return items
 
 
-def _get_related_images_for_instance(instance, skip_accessors=()):
-    urls = []
+def _get_related_file_objects(instance, skip_accessors=()):
+    items = []
     if not instance:
-        return urls
+        return items
     try:
         for rel in instance._meta.get_fields():
             if not (rel.one_to_many or rel.many_to_many):
@@ -443,15 +593,13 @@ def _get_related_images_for_instance(instance, skip_accessors=()):
                 order_by = [f for f in ('orden', 'id') if f in rel_field_names]
                 if order_by:
                     qs = qs.order_by(*order_by)
-                for item in qs:
-                    for u in _get_all_file_urls_from_obj(item):
-                        if u not in urls:
-                            urls.append(u)
+                for obj in qs:
+                    items.extend(_get_all_file_objects_from_instance(obj))
             except Exception:
                 continue
     except Exception:
         pass
-    return urls
+    return items
 
 
 def _store_uploaded_images(producto, files_list, color_obj=None):
@@ -459,7 +607,6 @@ def _store_uploaded_images(producto, files_list, color_obj=None):
         return
     from .models import Producto
 
-    # 1. Buscar un modelo relacionado de imágenes en Producto (ej. ProductoImagen)
     target_rel_model = None
     prod_fk_name = None
     color_fk_name = None
@@ -486,7 +633,6 @@ def _store_uploaded_images(producto, files_list, color_obj=None):
 
     remaining_files = list(files_list)
 
-    # Si se pasó un color y ProductoColor tiene campo de imagen propio, guardar ahí la primera
     if color_obj is not None and remaining_files:
         color_file_fields = [f for f in type(color_obj)._meta.get_fields() if isinstance(f, _ProdFileField)]
         if color_file_fields:
@@ -494,7 +640,6 @@ def _store_uploaded_images(producto, files_list, color_obj=None):
             setattr(color_obj, cf_name, remaining_files.pop(0))
             color_obj.save(update_fields=[cf_name])
 
-    # Guardar el resto (o todas si ProductoColor no tiene ImageField propio) en el modelo de galería
     if remaining_files and target_rel_model and prod_fk_name and file_field_name:
         for fobj in remaining_files:
             kwargs = {prod_fk_name: producto, file_field_name: fobj}
@@ -502,7 +647,6 @@ def _store_uploaded_images(producto, files_list, color_obj=None):
                 kwargs[color_fk_name] = color_obj
             target_rel_model.objects.create(**kwargs)
     elif remaining_files and color_obj is None:
-        # Si no hay tabla de galería extra y el producto no tiene imagen aún, guardar en Producto
         prod_file_fields = [f for f in Producto._meta.get_fields() if isinstance(f, _ProdFileField)]
         if prod_file_fields and not getattr(producto, prod_file_fields[0].name, None):
             pf_name = prod_file_fields[0].name
@@ -525,8 +669,25 @@ def _build_producto_editorial_data(producto):
     else:
         empresa_nombre = raw_emp.upper()
 
-    base_imgs = _get_all_file_urls_from_obj(producto)
-    rel_prod_imgs = _get_related_images_for_instance(producto, skip_accessors=('colores',))
+    base_file_objs = _get_all_file_objects_from_instance(producto)
+    rel_file_objs = _get_related_file_objects(producto, skip_accessors=('colores',))
+
+    base_imgs = []
+    for fo in base_file_objs:
+        try:
+            if fo.url and fo.url not in base_imgs:
+                base_imgs.append(fo.url)
+        except Exception:
+            pass
+
+    rel_prod_imgs = []
+    for fo in rel_file_objs:
+        try:
+            if fo.url and fo.url not in rel_prod_imgs:
+                rel_prod_imgs.append(fo.url)
+        except Exception:
+            pass
+
     img_url = base_imgs[0] if base_imgs else (rel_prod_imgs[0] if rel_prod_imgs else '')
 
     cat_obj = getattr(producto, 'categoria', None)
@@ -583,7 +744,6 @@ def _build_producto_editorial_data(producto):
             _prod_connection.close()
             colores_qs = []
 
-    # Construir galería unificada con TODAS las imágenes subidas (sin duplicados)
     galeria_map = {}
     galeria_imagenes = []
 
@@ -611,21 +771,23 @@ def _build_producto_editorial_data(producto):
     for u in rel_prod_imgs:
         _register_gallery_url(u, prod_title, -1)
 
-    # Construir lista de colores SOLO con los colores registrados por el usuario
     colores_list = []
     for idx, c in enumerate(colores_qs):
         c_nombre = _prod_safe_str(_prod_first_attr(c, ['nombre', 'color', 'titulo', 'name'], ''), f'Color {idx + 1}')
-        c_hex = _prod_safe_str(
-            _prod_first_attr(c, ['codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'], ''),
-            '#1c1c1c',
-        )
-        if c_hex and not c_hex.startswith('#'):
-            c_hex = f'#{c_hex}'
+        c_file_objs = _get_all_file_objects_from_instance(c) + _get_related_file_objects(c)
 
-        c_own_imgs = _get_all_file_urls_from_obj(c) + _get_related_images_for_instance(c)
+        c_own_imgs = []
+        for fo in c_file_objs:
+            try:
+                if fo.url and fo.url not in c_own_imgs:
+                    c_own_imgs.append(fo.url)
+            except Exception:
+                pass
+
         for u in c_own_imgs:
             _register_gallery_url(u, c_nombre, idx)
 
+        c_hex = _resolve_color_swatch_hex(c, c_nombre, c_file_objs)
         c_img = c_own_imgs[0] if c_own_imgs else ''
         gallery_idx = galeria_map[c_img]['index'] if c_img and c_img in galeria_map else -1
 
@@ -637,17 +799,22 @@ def _build_producto_editorial_data(producto):
         except Exception:
             del_url = f'/productos/colores/{c.id}/eliminar/'
 
+        try:
+            upd_url = _prod_reverse('productos:actualizar_color', args=[c.id])
+        except Exception:
+            upd_url = f'/productos/colores/{c.id}/actualizar/'
+
         colores_list.append({
             'id': c.id,
             'nombre': c_nombre,
-            'codigo_hex': c_hex or '#1c1c1c',
+            'codigo_hex': c_hex,
             'imagen_url': c_img,
             'gallery_index': gallery_idx,
             'stock': c_stock,
             'delete_url': del_url,
+            'update_url': upd_url,
         })
 
-    # Imagen inicial en el escenario principal
     initial_img = ''
     if colores_list and colores_list[0]['imagen_url']:
         initial_img = colores_list[0]['imagen_url']
@@ -743,8 +910,8 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
     from .models import ProductoColor
     producto = _resolve_producto_obj(pk=pk, id=id, producto_id=producto_id)
     nombre = (request.POST.get('nombre') or '').strip()
-    codigo_hex = (request.POST.get('codigo_hex') or '#1c1c1c').strip()
-    if not codigo_hex.startswith('#'):
+    codigo_hex = (request.POST.get('codigo_hex') or '').strip()
+    if codigo_hex and not codigo_hex.startswith('#'):
         codigo_hex = f'#{codigo_hex}'
 
     uploaded_files = request.FILES.getlist('imagenes') or request.FILES.getlist('imagen')
@@ -766,7 +933,7 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
             break
 
     for fname in ('codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'):
-        if fname in color_fields:
+        if fname in color_fields and codigo_hex:
             create_kwargs[fname] = codigo_hex
             break
 
@@ -787,6 +954,26 @@ def agregar_color_producto(request, pk=None, id=None, producto_id=None):
 
     _prod_messages.success(request, f'Color "{nombre}" agregado a {producto}.')
     return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{producto.pk}/')
+
+
+@_prod_login_required
+@_prod_require_POST
+def actualizar_color_producto(request, color_id: int):
+    from .models import ProductoColor
+    color = _prod_get_object_or_404(ProductoColor, pk=color_id)
+    prod_pk = color.producto_id
+    nuevo_hex = (request.POST.get('codigo_hex') or '').strip()
+    if nuevo_hex and not nuevo_hex.startswith('#'):
+        nuevo_hex = f'#{nuevo_hex}'
+
+    if re.match(r'^#[0-9a-fA-F]{6}$', nuevo_hex):
+        for fname in ('codigo_hex', 'codigo_color', 'hex', 'color_hex', 'hex_color', 'codigo'):
+            if hasattr(color, fname):
+                setattr(color, fname, nuevo_hex)
+                color.save(update_fields=[fname])
+                break
+        _prod_messages.success(request, 'Tono de color actualizado.')
+    return _prod_redirect(request.META.get('HTTP_REFERER') or f'/productos/{prod_pk}/')
 
 
 @_prod_login_required
