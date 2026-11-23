@@ -65,7 +65,10 @@ def _manejar_pago_exitoso(payment_intent: dict) -> None:
         pedido.save(update_fields=['estado'])
         logger.info(f'Pedido {pedido.numero_pedido} actualizado a "pagado".')
         _descontar_stock(pedido)
-        enviar_confirmacion_pedido.delay(pedido.pk)
+        try:
+            enviar_confirmacion_pedido.delay(pedido.pk)
+        except Exception as _celery_err:
+            print('CELERY_BROKER_WARN:', _celery_err, flush=True)
     else:
         logger.info(
             f'Pedido {pedido.numero_pedido} ya estaba pagado — idempotente, sin cambios.'

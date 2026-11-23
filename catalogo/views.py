@@ -265,7 +265,10 @@ def pago_exitoso(request, pedido_id: int):
     """Vista de confirmación post-pago exitoso (vacía carrito y encola tarea)."""
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     _guardar_carrito(request, {})
-    enviar_confirmacion_pedido.delay(pedido.pk)
+    try:
+        enviar_confirmacion_pedido.delay(pedido.pk)
+    except Exception as _celery_err:
+        print('CELERY_BROKER_WARN:', _celery_err, flush=True)
 
     messages.success(
         request,
