@@ -1,96 +1,308 @@
 {% extends "base.html" %}
-{% block title %}Mi carrito{% endblock %}
+{% load static %}
+
+{% block title %}Carrito de compras | Dandelion Star{% endblock %}
 
 {% block content %}
-<div class="erp-page-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
-    <h2 style="margin:0;">🛍️ Mi carrito</h2>
-    <a href="{% url 'catalogo:catalogo' %}" class="btn-erp-primary" style="padding:8px 14px;background:#1c1c1c;color:#fff;border-radius:6px;text-decoration:none;">
-        ← Seguir comprando
-    </a>
-</div>
+<style>
+  .ds-cart-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #111827;
+    background: #ffffff;
+  }
+  .ds-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  .ds-breadcrumb a { color: #6b7280; text-decoration: none; }
+  .ds-breadcrumb a:hover { color: #111827; }
+  .ds-breadcrumb .active { color: #111827; font-weight: 500; }
 
-{% if items %}
-<div class="erp-card" style="padding:1.25rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
-    <table class="erp-table" style="width:100%;border-collapse:collapse;">
-        <thead>
-            <tr style="border-bottom:2px solid #e5e5e5;">
-                <th style="text-align:left;padding:.6rem;">Producto</th>
-                <th style="text-align:right;padding:.6rem;">Precio unit.</th>
-                <th style="width:140px;text-align:center;padding:.6rem;">Cantidad</th>
-                <th style="text-align:right;padding:.6rem;">Subtotal</th>
-                <th style="width:60px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr style="border-bottom:1px solid #eee;">
-                <td style="font-weight:600;padding:.6rem;">{{ item.nombre }}</td>
-                <td style="text-align:right;padding:.6rem;">${{ item.precio }}</td>
-                <td style="text-align:center;padding:.6rem;">
-                    <form method="post" action="{% url 'catalogo:actualizar' item.prod_id %}"
-                          style="display:flex;align-items:center;gap:.25rem;justify-content:center;">
-                        {% csrf_token %}
-                        <input type="number" name="cantidad" value="{{ item.cantidad }}" min="0" max="99"
-                               class="erp-input" style="width:60px;text-align:center;padding:.3rem .5rem;">
-                        <button type="submit" class="btn-erp-primary btn-erp-sm">↻</button>
-                    </form>
-                </td>
-                <td style="text-align:right;font-weight:600;color:#8d6e26;padding:.6rem;">
-                    ${{ item.subtotal }}
-                </td>
-                <td style="text-align:center;padding:.6rem;">
-                    <form method="post" action="{% url 'catalogo:remover' item.prod_id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-erp-danger btn-erp-sm" title="Eliminar">✕</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr style="background:#fafafa;">
-                <td colspan="3" style="padding:.75rem 1rem;font-weight:600;text-align:right;">
-                    Total del carrito:
-                </td>
-                <td style="padding:.75rem 1rem;font-weight:700;font-size:1.2rem;text-align:right;color:#8d6e26;">
-                    ${{ total }}
-                </td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
+  .ds-cart-hero {
+    text-align: center;
+    padding: 12px 0 36px;
+  }
+  .ds-cart-hero h1 {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+    color: #111827;
+  }
+  .ds-cart-hero p {
+    font-size: 16px;
+    color: #4b5563;
+    margin: 0 0 22px;
+  }
+  .ds-btn-checkout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1f1f1f;
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 28px;
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .ds-btn-checkout:hover { background-color: #000000; }
 
-<div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;align-items:center;">
-    <form method="post" action="{% url 'catalogo:vaciar' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn-erp-danger"
-                style="padding:9px 16px;background:#c0392b;color:#fff;border:none;border-radius:6px;cursor:pointer;"
-                onclick="return confirm('¿Vaciar el carrito?')">
-            🗑️ Vaciar carrito
-        </button>
-    </form>
+  .ds-cart-list { border-top: 1px solid #e5e7eb; }
+  .ds-cart-item {
+    display: grid;
+    grid-template-columns: 140px 1fr auto auto 130px;
+    align-items: start;
+    gap: 24px;
+    padding: 26px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .ds-item-thumb {
+    width: 136px;
+    height: 136px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .ds-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-    {% if user.is_authenticated %}
-    <a href="{% url 'catalogo:checkout' %}"
-       class="btn-erp-gold" style="font-size:1rem;padding:.55rem 1.5rem;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
-        💳 Proceder al pago →
-    </a>
-    {% else %}
-    <a href="{% url 'account_login' %}?next={% url 'catalogo:checkout' %}"
-       class="btn-erp-gold" style="padding:.55rem 1.5rem;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
-        🔐 Inicia sesión para pagar
-    </a>
-    {% endif %}
-</div>
+  .ds-item-info h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 18px;
+    color: #111827;
+  }
+  .ds-item-meta {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #4b5563;
+  }
+  .ds-item-meta li { display: flex; align-items: center; gap: 8px; }
+  .ds-item-meta svg { width: 14px; height: 14px; color: #6b7280; flex-shrink: 0; }
 
-{% else %}
-<div class="erp-card" style="text-align:center;padding:3rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
-    <p style="font-size:3rem;margin:0;">🛒</p>
-    <p style="color:#6c757d;margin:.5rem 0 1.5rem;">Tu carrito está vacío.</p>
-    <a href="{% url 'catalogo:catalogo' %}" class="btn-erp-gold" style="padding:10px 20px;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
-        Ver catálogo de productos
+  .ds-select, .ds-qty-box {
+    appearance: none;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 32px 7px 12px;
+    font-size: 13.5px;
+    color: #111827;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234b5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+  }
+  .ds-qty-box {
+    display: inline-block;
+    padding: 7px 14px;
+    background-image: none;
+    cursor: default;
+  }
+
+  .ds-item-price-col {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .ds-item-price { font-size: 15.5px; font-weight: 500; color: #111827; }
+  .ds-btn-remove {
+    background: #ffffff;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .ds-btn-remove:hover { background: #fef2f2; border-color: #fca5a5; }
+
+  .ds-cart-summary-wrap {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 24px;
+    padding-top: 24px;
+  }
+  .ds-cart-summary { grid-column: 2; }
+  .ds-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+    margin-bottom: 12px;
+    color: #111827;
+  }
+  .ds-summary-row span:first-child { font-weight: 500; }
+  .ds-summary-divider { border: 0; border-top: 1px solid #e5e7eb; margin: 18px 0 20px; }
+  .ds-summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .ds-summary-actions { display: flex; justify-content: flex-end; }
+
+  @media (max-width: 768px) {
+    .ds-cart-item { grid-template-columns: 96px 1fr; gap: 14px; }
+    .ds-item-thumb { width: 96px; height: 96px; }
+    .ds-item-price-col { grid-column: 2; flex-direction: row; justify-content: space-between; align-items: center; }
+    .ds-cart-summary-wrap { grid-template-columns: 1fr; }
+    .ds-cart-summary { grid-column: 1; }
+  }
+</style>
+
+<div class="ds-cart-page">
+  <nav class="ds-breadcrumb" aria-label="Breadcrumb">
+    <a href="/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      </svg>
     </a>
+    <span>&rsaquo;</span>
+    <a href="{% url 'catalogo:catalogo' %}">Cat?logo</a>
+    <span>&rsaquo;</span>
+    <span class="active">Carrito</span>
+  </nav>
+
+  {% if items %}
+    <div class="ds-cart-hero">
+      <h1>El total de tu carrito es $ {{ total|floatformat:2 }}</h1>
+      <p>Env?o y devoluciones gratis</p>
+      <a href="{% url 'catalogo:checkout' %}" class="ds-btn-checkout">Proceder al pago</a>
+    </div>
+
+    <div class="ds-cart-list">
+      {% for item in items %}
+      <div class="ds-cart-item">
+        <div class="ds-item-thumb">
+          {% if item.producto.imagen %}
+            <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}">
+          {% else %}
+            <span style="color:#9ca3af;font-size:12px;">Sin imagen</span>
+          {% endif %}
+        </div>
+
+        <div class="ds-item-info">
+          <h3>{{ item.producto.nombre }}</h3>
+          <ul class="ds-item-meta">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                <polyline points="3 7 12 13 21 7"></polyline>
+              </svg>
+              <span>Ordena hoy</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              <span>Entrega estimada en <strong>3 a 5 d?as</strong></span>
+            </li>
+            {% if item.producto.stock %}
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span>Solo {{ item.producto.stock }} disponibles</span>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <div>
+          <form method="post" action="{% url 'catalogo:actualizar' item.prod_id %}">
+            {% csrf_token %}
+            <select name="cantidad" class="ds-select" onchange="this.form.submit()">
+              {% for n in "123456789"|make_list %}
+                <option value="{{ forloop.counter }}" {% if item.cantidad == forloop.counter %}selected{% endif %}>
+                  {{ forloop.counter }}
+                </option>
+              {% endfor %}
+            </select>
+          </form></div>
+
+        <div>
+          {% if item.variante %}
+            <select class="ds-select" disabled>
+              <option selected>{{ item.variante }}</option>
+            </select>
+          {% endif %}
+        </div>
+
+        <div class="ds-item-price-col">
+          <span class="ds-item-price">${{ item.subtotal|floatformat:2 }}</span>
+          
+          <form method="post" action="{% url 'catalogo:remover' item.prod_id %}">
+            {% csrf_token %}
+            <button type="submit" class="ds-btn-remove">Eliminar</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="ds-cart-summary-wrap">
+      <div class="ds-cart-summary">
+        <div class="ds-summary-row">
+          <span>Subtotal</span>
+          <span>$ {{ subtotal|default:total|floatformat:2 }}</span>
+        </div>
+        <div class="ds-summary-row">
+          <span>Env?o</span>
+          <span>Gratis</span>
+        </div>
+        {% if iva %}
+        <div class="ds-summary-row">
+          <span>IVA</span>
+          <span>$ {{ iva|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+
+        <hr class="ds-summary-divider">
+
+        <div class="ds-summary-total">
+          <span>Total</span>
+          <span>$ {{ total|floatformat:2 }}</span>
+        </div>
+
+        <div class="ds-summary-actions">
+          <a href="{% url 'catalogo:checkout' %}" class="ds-btn-checkout">Proceder al pago</a>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="ds-cart-hero">
+      <h1>Tu carrito est? vac?o</h1>
+      <p>Agrega productos del cat?logo para continuar con tu compra.</p>
+      <a href="{% url 'catalogo:catalogo' %}" class="ds-btn-checkout">Ver cat?logo</a>
+    </div>
+  {% endif %}
 </div>
-{% endif %}
 {% endblock %}
