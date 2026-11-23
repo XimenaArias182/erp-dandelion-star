@@ -143,7 +143,7 @@ from django.http import HttpResponse
 def venta_pdf(request, venta_id: int) -> HttpResponse:
     """Genera y descarga la factura de una venta en formato PDF con WeasyPrint."""
     import weasyprint
-    from datetime import date
+    from django.utils import timezone
     from django.conf import settings
     from django.http import HttpResponse
     from django.shortcuts import get_object_or_404
@@ -162,7 +162,7 @@ def venta_pdf(request, venta_id: int) -> HttpResponse:
     context = {
         'venta': venta,
         'config': config,
-        'hoy': date.today(),
+        'hoy': timezone.now(),
     }
 
     html_string = render_to_string(
