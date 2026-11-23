@@ -147,323 +147,45 @@ from .models import Venta as _Venta
 
 
 @_login_required
-def venta_pdf(request, venta_id: int) -> _HttpResponse:
-    import base64
-    from datetime import date, datetime
-    from decimal import Decimal
-    from io import BytesIO as _BytesIO
-    from pathlib import Path as _Path
+@login_required
+def venta_pdf(request, venta_id: int) -> HttpResponse:
+    """Genera y descarga la factura de una venta en formato PDF con WeasyPrint."""
+    import weasyprint
+    from datetime import date
+    from django.conf import settings
+    from django.http import HttpResponse
+    from django.shortcuts import get_object_or_404
+    from django.template.loader import render_to_string
     from configuracion.models import ConfiguracionERP
+    from .models import Venta
 
-    venta = _get_object_or_404(
-        _Venta.objects
+    venta = get_object_or_404(
+        Venta.objects
         .select_related('cliente')
         .prefetch_related('detalles__producto__categoria'),
-        pk=venta_id,
+        pk=venta_id
     )
 
     config = ConfiguracionERP.get_instance()
-
-    def _clean_text(val) -> str:
-        if val in (None, ''):
-            return ''
-        txt = str(val).strip()
-        if txt in ('?', '?', '?', 'None'):
-            return ''
-        return txt.replace('�', '')
-
-    def _first_attr(obj, names, default=''):
-        if not obj:
-            return default
-        for name in names:
-            val = getattr(obj, name, None)
-            if callable(val):
-                try:
-                    val = val()
-                except Exception:
-                    val = None
-            if val not in (None, ''):
-                if isinstance(val, str):
-                    cleaned = _clean_text(val)
-                    if cleaned:
-                        return cleaned
-                else:
-                    return val
-        return default
-
-    def _make_calligraphy_title_uri(text: str) -> str:
-        try:
-            from PIL import Image, ImageDraw, ImageFont
-            base_dir = _Path(settings.BASE_DIR)
-            candidates = [
-                base_dir / 'static' / 'fonts' / 'GreatVibes-Regular.ttf',
-                base_dir / 'staticfiles' / 'fonts' / 'GreatVibes-Regular.ttf',
-                _Path('C:/Windows/Fonts/EDWARDOI.TTF'),
-                _Path('C:/Windows/Fonts/KUNSTLER.TTF'),
-                _Path('C:/Windows/Fonts/PALSCRI.TTF'),
-                _Path('C:/Windows/Fonts/FRSCRIPT.TTF'),
-                _Path('C:/Windows/Fonts/BRUSHSCI.TTF'),
-                _Path('C:/Windows/Fonts/SCRIPTBL.TTF'),
-                _Path('C:/Windows/Fonts/SEGOESC.TTF'),
-                _Path('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf'),
-            ]
-            font = None
-            for fp in candidates:
-                if fp.exists():
-                    try:
-                        font = ImageFont.truetype(str(fp), 132)
-                        break
-                    except Exception:
-                        continue
-            if font is None:
-                return ''
-
-            dummy = Image.new('RGB', (10, 10), (255, 255, 255))
-            d_draw = ImageDraw.Draw(dummy)
-            bbox = d_draw.textbbox((0, 0), text, font=font)
-            pad = 26
-            w = max(1, (bbox[2] - bbox[0]) + pad * 2)
-            h = max(1, (bbox[3] - bbox[1]) + pad * 2)
-
-            canvas = Image.new('RGB', (w, h), (255, 255, 255))
-            draw = ImageDraw.Draw(canvas)
-            draw.text((pad - bbox[0], pad - bbox[1]), text, font=font, fill=(28, 28, 28))
-
-            out = _BytesIO()
-            canvas.save(out, format='PNG', optimize=True)
-            return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
-        except Exception:
-            return ''
-
-    def _make_round_gold_logo(raw_bytes: bytes) -> str:
-        try:
-            from PIL import Image, ImageDraw, ImageFilter
-            resampling = getattr(Image, 'Resampling', Image).LANCZOS
-
-            im = Image.open(_BytesIO(raw_bytes)).convert('RGBA')
-            w, h = im.size
-            side = min(w, h)
-            left = (w - side) // 2
-            top = (h - side) // 2
-            im = im.crop((left, top, left + side, top + side))
-
-            inner_size = 240
-            canvas_size = 310
-            center = canvas_size // 2
-            im = im.resize((inner_size, inner_size), resampling)
-
-            scale = 4
-            big_mask = Image.new('L', (inner_size * scale, inner_size * scale), 0)
-            ImageDraw.Draw(big_mask).ellipse(
-                (0, 0, inner_size * scale - 1, inner_size * scale - 1),
-                fill=255,
-            )
-            circle_mask = big_mask.resize((inner_size, inner_size), resampling)
-
-            base_white = Image.new('RGBA', (canvas_size, canvas_size), (255, 255, 255, 255))
-
-            glow_layer = Image.new('RGBA', (canvas_size, canvas_size), (0, 0, 0, 0))
-            glow_draw = ImageDraw.Draw(glow_layer)
-            r_outer = inner_size // 2 + 18
-            r_mid = inner_size // 2 + 10
-            glow_draw.ellipse(
-                (center - r_outer, center - r_outer, center + r_outer, center + r_outer),
-                fill=(218, 178, 62, 140),
-            )
-            glow_draw.ellipse(
-                (center - r_mid, center - r_mid, center + r_mid, center + r_mid),
-                fill=(245, 216, 120, 210),
-            )
-            glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=10))
-
-            ring_layer = Image.new('RGBA', (canvas_size * scale, canvas_size * scale), (0, 0, 0, 0))
-            ring_draw = ImageDraw.Draw(ring_layer)
-            c_big = center * scale
-            r_gold_ext = (inner_size // 2 + 5) * scale
-            r_gold_int = (inner_size // 2 + 2) * scale
-            ring_draw.ellipse(
-                (c_big - r_gold_ext, c_big - r_gold_ext, c_big + r_gold_ext, c_big + r_gold_ext),
-                fill=(196, 152, 52, 255),
-            )
-            ring_draw.ellipse(
-                (c_big - r_gold_int, c_big - r_gold_int, c_big + r_gold_int, c_big + r_gold_int),
-                fill=(246, 224, 148, 255),
-            )
-            ring_smooth = ring_layer.resize((canvas_size, canvas_size), resampling)
-
-            composed = Image.alpha_composite(base_white, glow_layer)
-            composed = Image.alpha_composite(composed, ring_smooth)
-            offset = (canvas_size - inner_size) // 2
-            composed.paste(im, (offset, offset), circle_mask)
-
-            out = _BytesIO()
-            composed.convert('RGB').save(out, format='PNG', optimize=True)
-            return f"data:image/png;base64,{base64.b64encode(out.getvalue()).decode('ascii')}"
-        except Exception:
-            return f"data:image/png;base64,{base64.b64encode(raw_bytes).decode('ascii')}"
-
-    logo_data_uri = ''
-    for field_name in ('logo', 'imagen', 'logo_empresa', 'icono'):
-        logo_field = getattr(config, field_name, None)
-        if logo_field:
-            try:
-                with logo_field.open('rb') as f:
-                    logo_data_uri = _make_round_gold_logo(f.read())
-                if logo_data_uri:
-                    break
-            except Exception:
-                pass
-
-    if not logo_data_uri:
-        base_dir = _Path(settings.BASE_DIR)
-        for folder in ('static', 'staticfiles', 'media'):
-            search_root = base_dir / folder
-            if search_root.exists():
-                matches = [
-                    p for p in search_root.rglob('*')
-                    if p.is_file()
-                    and p.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp')
-                    and ('logo' in p.name.lower() or 'dandelion' in p.name.lower())
-                ]
-                if matches:
-                    try:
-                        logo_data_uri = _make_round_gold_logo(matches[0].read_bytes())
-                        break
-                    except Exception:
-                        pass
-
-    raw_nombre = str(_first_attr(config, ['nombre_empresa', 'razon_social', 'nombre', 'titulo'], '')).strip()
-    if not raw_nombre or raw_nombre.lower() in ('mi empresa erp', 'mi empresa'):
-        nombre_empresa = 'Dandelion Star'
-    else:
-        nombre_empresa = raw_nombre
-
-    raw_dir = str(_first_attr(config, ['direccion', 'domicilio', 'ubicacion', 'sucursal'], '')).strip()
-    if not raw_dir or '?' in raw_dir:
-        direccion_empresa = 'Celaya, Guanajuato, M?xico'
-    else:
-        direccion_empresa = raw_dir
-
-    empresa = {
-        'nombre': nombre_empresa,
-        'nombre_script_uri': _make_calligraphy_title_uri(nombre_empresa),
-        'rfc': _first_attr(config, ['rfc', 'tax_id', 'nit', 'cif'], ''),
-        'direccion': direccion_empresa,
-        'ciudad': _first_attr(config, ['ciudad', 'municipio', 'estado', 'pais'], ''),
-        'telefono': _first_attr(config, ['telefono', 'celular', 'whatsapp'], ''),
-        'email': _first_attr(config, ['email', 'correo', 'correo_electronico'], ''),
-        'sitio_web': _first_attr(config, ['sitio_web', 'web', 'pagina_web'], 'erp-dandelion-star.onrender.com'),
-        'moneda': _first_attr(config, ['simbolo_moneda', 'moneda'], '$'),
-        'logo_data_uri': logo_data_uri,
-    }
-
-    cliente_obj = getattr(venta, 'cliente', None)
-    cliente_info = {
-        'nombre': _first_attr(cliente_obj, ['nombre_completo', 'nombre', 'razon_social'], 'P?blico en General'),
-        'domicilio': _first_attr(cliente_obj, ['direccion', 'domicilio', 'ciudad'], ''),
-        'email': _first_attr(cliente_obj, ['email', 'correo'], ''),
-        'telefono': _first_attr(cliente_obj, ['telefono', 'celular'], ''),
-        'rfc': _first_attr(cliente_obj, ['rfc', 'tax_id'], ''),
-    }
-
-    items_pdf = []
-    subtotal_calc = Decimal('0.00')
-    for idx, d in enumerate(venta.detalles.all(), start=1):
-        prod = getattr(d, 'producto', None)
-        cant = Decimal(str(getattr(d, 'cantidad', 1) or 1))
-        precio = Decimal(str(_first_attr(d, ['precio_unitario', 'precio'], '0.00')))
-        sub_attr = getattr(d, 'subtotal', None)
-        if callable(sub_attr):
-            sub_attr = sub_attr()
-        sub = Decimal(str(sub_attr)) if sub_attr not in (None, '') else (cant * precio)
-        subtotal_calc += sub
-
-        cat_obj = getattr(prod, 'categoria', None)
-        items_pdf.append({
-            'num': idx,
-            'cantidad': getattr(d, 'cantidad', 1),
-            'nombre': _first_attr(prod, ['nombre', 'titulo'], f'Producto #{idx}'),
-            'sku': _first_attr(prod, ['sku', 'codigo', 'referencia'], ''),
-            'categoria': _first_attr(cat_obj, ['nombre'], _clean_text(cat_obj) if cat_obj else ''),
-            'precio_unitario': precio,
-            'subtotal': sub,
-        })
-
-    min_rows = 8
-    empty_rows = range(max(0, min_rows - len(items_pdf)))
-
-    total_venta = getattr(venta, 'total', None)
-    if callable(total_venta):
-        total_venta = total_venta()
-    total_final = Decimal(str(total_venta)) if total_venta not in (None, '') else subtotal_calc
-
-    subtotal_venta = getattr(venta, 'subtotal', None)
-    if callable(subtotal_venta):
-        subtotal_venta = subtotal_venta()
-    subtotal_final = Decimal(str(subtotal_venta)) if subtotal_venta not in (None, '') else subtotal_calc
-
-    impuestos_final = Decimal(str(_first_attr(venta, ['iva', 'impuestos', 'impuesto'], '0.00')))
-    descuento_final = Decimal(str(_first_attr(venta, ['descuento'], '0.00')))
-
-    fecha_op = _first_attr(venta, ['fecha', 'fecha_creacion', 'created_at']) or datetime.now()
-    if isinstance(fecha_op, date) and not isinstance(fecha_op, datetime):
-        fecha_op = datetime(fecha_op.year, fecha_op.month, fecha_op.day)
-
-    lugar_raw = _first_attr(venta, ['sucursal', 'ubicacion', 'lugar'], '')
-    lugar_final = direccion_empresa if (not lugar_raw or '?' in str(lugar_raw)) else lugar_raw
-
-    venta_info = {
-        'folio': f"{venta.pk:05d}",
-        'fecha': fecha_op,
-        'dia': fecha_op.strftime('%d'),
-        'mes': fecha_op.strftime('%m'),
-        'anio': fecha_op.strftime('%Y'),
-        'hora': fecha_op.strftime('%H:%M'),
-        'lugar': lugar_final,
-        'metodo_pago': _first_attr(venta, ['get_metodo_pago_display', 'metodo_pago', 'forma_pago'], 'Contado'),
-        'notas': _first_attr(venta, ['notas', 'observaciones', 'comentarios'], ''),
-        'subtotal': subtotal_final,
-        'impuestos': impuestos_final,
-        'descuento': descuento_final,
-        'total': total_final,
-    }
-
     context = {
         'venta': venta,
         'config': config,
         'hoy': date.today(),
-        'empresa': empresa,
-        'cliente_info': cliente_info,
-        'items_pdf': items_pdf,
-        'empty_rows': empty_rows,
-        'venta_info': venta_info,
     }
 
-    html_string = _render_to_string(
+    html_string = render_to_string(
         'ventas/factura_pdf.html',
         context,
-        request=request,
+        request=request
     )
 
-    try:
-        import weasyprint
-        pdf_bytes = weasyprint.HTML(
-            string=html_string,
-            base_url=request.build_absolute_uri('/'),
-        ).write_pdf()
-    except (ImportError, OSError):
-        from xhtml2pdf import pisa
-        pdf_buffer = _BytesIO()
-        pisa_status = pisa.CreatePDF(
-            html_string,
-            dest=pdf_buffer,
-            encoding='utf-8',
-        )
-        if pisa_status.err:
-            return _HttpResponse('Error al generar el comprobante PDF.', status=500)
-        pdf_bytes = pdf_buffer.getvalue()
+    base_url = getattr(settings, 'SITE_DOMAIN', request.build_absolute_uri('/'))
+    pdf_bytes = weasyprint.HTML(
+        string=html_string,
+        base_url=base_url,
+    ).write_pdf()
 
-    response = _HttpResponse(pdf_bytes, content_type='application/pdf')
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = (
         f'attachment; filename="factura_{venta.pk:05d}.pdf"'
     )

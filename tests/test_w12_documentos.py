@@ -1,17 +1,4 @@
-"""Suite de pruebas W12 — WeasyPrint PDF y exportación Excel.
-
-IMPORTANTE: Estos tests deben ejecutarse dentro del contenedor Docker
-donde WeasyPrint y sus dependencias nativas están disponibles.
-
-Ejecutar con:
-    docker-compose exec web python manage.py test tests.test_w12_documentos --verbosity=2
-
-NO ejecutar directamente en el host Windows (faltarán las librerías nativas).
-
-Resultado esperado:
-    Ran 8 tests in X.XXXs
-    OK
-"""
+"""Suite de pruebas W12 — WeasyPrint PDF y exportación Excel."""
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -45,7 +32,7 @@ class VentaPDFWeasyPrintTest(TestCase):
         )
 
     def test_pdf_sin_auth_redirige_a_login(self):
-        """GET /ventas/<id>/pdf/ sin login → 302 al login."""
+        """GET /ventas/<id>/pdf/ sin login -> 302 al login."""
         r = self.client.get(
             reverse('ventas:pdf', args=[self.venta.pk])
         )
@@ -53,7 +40,7 @@ class VentaPDFWeasyPrintTest(TestCase):
         self.assertIn('/accounts/login/', r['Location'])
 
     def test_pdf_con_auth_devuelve_200(self):
-        """GET /ventas/<id>/pdf/ con login → 200."""
+        """GET /ventas/<id>/pdf/ con login -> 200."""
         self.client.force_login(self.user)
         r = self.client.get(
             reverse('ventas:pdf', args=[self.venta.pk])
@@ -74,7 +61,6 @@ class VentaPDFWeasyPrintTest(TestCase):
         r = self.client.get(
             reverse('ventas:pdf', args=[self.venta.pk])
         )
-        # Los primeros 4 bytes deben ser '%PDF' para un PDF válido
         self.assertTrue(
             r.content[:4] == b'%PDF',
             "La respuesta no es un PDF válido (no empieza con %PDF)"
@@ -91,7 +77,7 @@ class VentaPDFWeasyPrintTest(TestCase):
         self.assertIn('.pdf', disposition)
 
     def test_pdf_venta_inexistente_devuelve_404(self):
-        """GET /ventas/9999/pdf/ → 404 Not Found."""
+        """GET /ventas/9999/pdf/ -> 404 Not Found."""
         self.client.force_login(self.user)
         r = self.client.get(
             reverse('ventas:pdf', args=[9999])

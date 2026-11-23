@@ -1,363 +1,296 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Comprobante #{{ venta_info.folio }} - {{ empresa.nombre }}</title>
-<style>
-    @page {
-        size: letter;
-        margin: 1.2cm 1.4cm;
-    }
-    body {
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-size: 10pt;
-        color: #1c1c1c;
-        margin: 0;
-        padding: 0;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        border-spacing: 0;
-    }
+    <meta charset="UTF-8">
+    <title>Factura {{ pedido.numero_pedido|default:venta.pk }}</title>
+    <style>
+        :root {
+            --navy:  #0A2342;
+            --gold:  #B8860B;
+            --sky:   #4A90D9;
+            --ice:   #E8F0FB;
+            --muted: #5A6A7E;
+            --text:  #1A1A2E;
+        }
 
-    /* CABECERA SUPERIOR: LOGO REDONDO DORADO + NOMBRE EN CALIGRAF?A NEGRA */
-    .top-brand-table {
-        margin-bottom: 14px;
-    }
-    .top-brand-table td {
-        vertical-align: middle;
-        border: none;
-    }
-    .brand-logo {
-        width: 106px;
-        height: 106px;
-    }
-    .brand-title-box {
-        text-align: center;
-        padding: 2px 6px;
-    }
-    .brand-script-img {
-        height: 54pt;
-        width: auto;
-        max-width: 320pt;
-        margin: 0 auto;
-    }
-    .brand-cursive-title {
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-style: italic;
-        font-weight: normal;
-        font-size: 34pt;
-        line-height: 1.08;
-        color: #111111;
-        margin: 0;
-    }
-    .brand-gold-rule {
-        width: 78%;
-        margin: 6px auto 0 auto;
-        border-bottom: 1.5pt solid #b8933d;
-    }
+        @page {
+            size: A4 portrait;
+            margin: 2cm 2cm 3cm 2cm;
 
-    /* CUADR?CULA DE CLIENTE Y FECHA CON BORDES S?LIDOS UNIFICADOS */
-    .meta-grid {
-        margin-bottom: 14px;
-    }
-    .meta-grid td {
-        border: 1pt solid #222222;
-        padding: 6px 9px;
-        font-size: 9.5pt;
-        vertical-align: middle;
-    }
-    .fecha-header {
-        background-color: #222222;
-        color: #ffffff !important;
-        text-align: center;
-        font-size: 9.2pt;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        border: 1pt solid #222222;
-    }
-    .fecha-cell {
-        text-align: center;
-        font-weight: bold;
-        font-size: 10pt;
-        width: 9.5%;
-    }
-    .meta-label {
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #222222;
-    }
-    .meta-val {
-        font-weight: bold;
-        color: #111111;
-    }
+            @top-left {
+                content: element(header-running);
+                margin-top: .5cm;
+            }
 
-    /* TABLA PRINCIPAL DE PRODUCTOS CON FILA OSCURA CONTINUA */
-    .dark-header-row {
-        background-color: #222222;
-    }
-    .items-grid th {
-        background-color: #222222;
-        color: #ffffff;
-        border: 1pt solid #222222;
-        padding: 8px 6px;
-        font-size: 9pt;
-        font-weight: normal;
-        letter-spacing: 1.4px;
-        text-transform: uppercase;
-        text-align: center;
-    }
-    .items-grid td {
-        border: 1pt solid #222222;
-        padding: 6px 8px;
-        font-size: 9.5pt;
-        line-height: 1.35;
-        vertical-align: middle;
-    }
-    .col-cant {
-        width: 14%;
-        text-align: center;
-    }
-    .col-desc { width: 46%; text-align: left; }
-    .col-unit { width: 20%; text-align: right; }
-    .col-imp  { width: 20%; text-align: right; }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: Arial, sans-serif;
+                font-size: 8.5pt;
+                color: #5A6A7E;
+                border-top: 1px solid #C8D8EC;
+                padding-top: .3cm;
+            }
 
-    .prod-name {
-        font-size: 9.5pt;
-        font-weight: bold;
-        color: #181818;
-    }
-    .prod-extra {
-        font-size: 8.5pt;
-        color: #555555;
-    }
+            @bottom-left {
+                content: string(empresa-nombre);
+                font-family: Arial, sans-serif;
+                font-size: 8.5pt;
+                color: #5A6A7E;
+                border-top: 1px solid #C8D8EC;
+                padding-top: .3cm;
+            }
+        }
 
-    /* BLOQUE INFERIOR INTEGRADO */
-    .empresa-firma-box {
-        padding: 12px 14px 6px 18px;
-        border: none !important;
-        vertical-align: top;
-    }
-    .empresa-firma-script {
-        height: 24pt;
-        width: auto;
-        margin-bottom: 4px;
-    }
-    .empresa-firma-nombre {
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-style: italic;
-        font-size: 16pt;
-        color: #111111;
-        font-weight: normal;
-        margin-bottom: 4px;
-    }
-    .empresa-firma-detalle {
-        font-size: 8.8pt;
-        color: #444444;
-        line-height: 1.45;
-    }
-    .tot-label {
-        background-color: #222222;
-        color: #ffffff !important;
-        text-align: center;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        padding: 6px 9px;
-        font-size: 9.5pt;
-        border: 1pt solid #222222;
-    }
-    .tot-val {
-        background-color: #ffffff;
-        text-align: right;
-        font-weight: bold;
-        color: #111111;
-        padding: 6px 9px;
-        font-size: 9.5pt;
-        border: 1pt solid #222222;
-    }
+        @page :first {
+            @top-left { content: none; }
+        }
 
-    /* PIE DE P?GINA EN 3 COLUMNAS */
-    .footer-table {
-        margin-top: 22px;
-    }
-    .footer-head td {
-        text-align: center;
-        font-family: "Times New Roman", Times, Georgia, serif;
-        font-size: 10.5pt;
-        letter-spacing: 2.5px;
-        text-transform: uppercase;
-        color: #1c1c1c;
-        padding-bottom: 5px;
-        border-bottom: 1.2pt solid #b8933d;
-        width: 33.33%;
-    }
-    .footer-body td {
-        text-align: center;
-        font-size: 8.8pt;
-        color: #262626;
-        padding-top: 6px;
-        line-height: 1.4;
-        vertical-align: top;
-    }
-</style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10.5pt;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        #header-running {
+            position: running(header-running);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: .3cm;
+        }
+        #header-running .empresa { font-weight: bold; color: var(--navy); }
+        #header-running .folio   { margin-left: auto; color: var(--gold); font-weight: bold; }
+
+        #empresa-string { string-set: empresa-nombre content(); }
+
+        .header {
+            background: var(--navy);
+            color: #FFFFFF;
+            padding: 18px 24px;
+            border-bottom: 4px solid var(--gold);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header-logo {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: rgba(255,255,255,.08);
+        }
+        .header-logo-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .header-title { font-size: 22pt; font-weight: bold; color: var(--gold); }
+        .header-empresa { color: rgba(255,255,255,.78); font-size: 10pt; margin-top: 2px; }
+        .header-folio {
+            margin-left: auto;
+            text-align: right;
+        }
+        .header-folio .folio-num { font-size: 15pt; font-weight: bold; color: var(--gold); }
+        .header-folio .folio-fecha { color: rgba(255,255,255,.68); font-size: 9pt; }
+
+        .datos-section { margin-bottom: 18px; }
+        .datos-tabla {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .datos-tabla td {
+            padding: 5px 9px;
+            font-size: 9.5pt;
+            border: 1px solid var(--ice);
+        }
+        .datos-tabla .lbl {
+            background: var(--ice);
+            font-weight: bold;
+            color: var(--navy);
+            width: 28%;
+        }
+
+        .productos-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0;
+            border-spacing: 0;
+        }
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
+
+        .productos-tabla thead th {
+            background: var(--navy);
+            color: #FFFFFF;
+            padding: 8px 11px;
+            font-size: 9pt;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 3px solid var(--gold);
+        }
+        .productos-tabla thead th.num { text-align: right; }
+        .productos-tabla tbody td {
+            padding: 7px 11px;
+            font-size: 9.5pt;
+            border-bottom: 1px solid var(--ice);
+            page-break-inside: avoid;
+        }
+        .productos-tabla tbody td.num { text-align: right; }
+        .productos-tabla tbody tr:nth-child(even) td { background: #F8FAFD; }
+
+        .total-section { margin-top: 12px; }
+        .total-tabla { width: 50%; margin-left: 50%; border-collapse: collapse; }
+        .total-tabla td {
+            padding: 6px 10px;
+            font-size: 9.5pt;
+            border: 1px solid var(--ice);
+        }
+        .total-tabla .lbl {
+            background: var(--ice);
+            font-weight: bold;
+            color: var(--navy);
+        }
+        .total-tabla .val { text-align: right; }
+        .total-tabla tr.final td {
+            background: #FDF8E8;
+            border-top: 2px solid var(--gold);
+            font-weight: bold;
+            font-size: 11.5pt;
+        }
+        .total-tabla .val.gold { color: var(--gold); font-size: 12.5pt; }
+
+        .nota {
+            margin-top: 24px;
+            padding: 12px 16px;
+            border-left: 4px solid var(--sky);
+            background: #F5F9FF;
+            font-size: 8.5pt;
+            color: var(--muted);
+            page-break-inside: avoid;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ENCABEZADO: LOGO REDONDO DORADO + NOMBRE DE EMPRESA EN CALIGRAF?A NEGRA -->
-    <table class="top-brand-table" cellspacing="0" cellpadding="0">
+<div id="header-running">
+    <span class="empresa">{{ config.nombre_empresa }}</span>
+    {% if config.rfc %}<span style="color:var(--muted);font-size:8.5pt;">RFC: {{ config.rfc }}</span>{% endif %}
+    <span class="folio">Factura #{{ venta.pk|stringformat:"05d" }}</span>
+</div>
+
+<span id="empresa-string">{{ config.nombre_empresa }}</span>
+
+<div class="header">
+    {% if config.logo %}
+        <img class="header-logo" src="{{ config.logo.url }}" alt="Logo">
+    {% else %}
+        <div class="header-logo-placeholder">&#128230;</div>
+    {% endif %}
+
+    <div>
+        <div class="header-title">FACTURA</div>
+        <div class="header-empresa">{{ config.nombre_empresa }}</div>
+        {% if config.rfc %}
+        <div class="header-empresa" style="font-size:9pt;">RFC: {{ config.rfc }}</div>
+        {% endif %}
+    </div>
+
+    <div class="header-folio">
+        <div class="folio-num"># {{ venta.pk|stringformat:"05d" }}</div>
+        <div class="folio-fecha">{{ venta.fecha|date:"d/m/Y" }}</div>
+        <div class="folio-fecha">{{ venta.fecha|date:"H:i" }} h</div>
+    </div>
+</div>
+
+<div class="datos-section">
+    <table class="datos-tabla">
         <tr>
-            <td style="width: 22%; text-align: center;">
-                {% if empresa.logo_data_uri %}
-                    <img src="{{ empresa.logo_data_uri }}" alt="Logo" class="brand-logo">
-                {% endif %}
-            </td>
-            <td style="width: 56%;">
-                <div class="brand-title-box">
-                    {% if empresa.nombre_script_uri %}
-                        <img src="{{ empresa.nombre_script_uri }}" alt="{{ empresa.nombre }}" class="brand-script-img">
-                    {% else %}
-                        <div class="brand-cursive-title">{{ empresa.nombre }}</div>
-                    {% endif %}
-                    <div class="brand-gold-rule"></div>
-                </div>
-            </td>
-            <td style="width: 22%; text-align: right; font-size: 8.6pt; color: #444444; line-height: 1.5;">
-                {% if empresa.rfc %}<div><strong>RFC:</strong> {{ empresa.rfc }}</div>{% endif %}
-                <div><strong>Hora:</strong> {{ venta_info.hora }} hrs</div>
-                <div><strong>Pago:</strong> {{ venta_info.metodo_pago }}</div>
-            </td>
+            <td class="lbl">Cliente</td>
+            <td>{{ venta.cliente.nombre }}</td>
+            <td class="lbl">Correo</td>
+            <td>{{ venta.cliente.correo }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Tel&eacute;fono</td>
+            <td>{{ venta.cliente.telefono|default:"—" }}</td>
+            <td class="lbl">Moneda</td>
+            <td>{{ config.moneda }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Fecha de emisi&oacute;n</td>
+            <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+            <td class="lbl">IVA</td>
+            <td>{{ config.iva_porcentaje }}%</td>
         </tr>
     </table>
+</div>
 
-    <!-- CUADR?CULA DE FACTURA NO., FECHA Y CLIENTE -->
-    <table class="meta-grid" cellspacing="0" cellpadding="0">
+<table class="productos-tabla">
+    <thead>
         <tr>
-            <td style="width: 71.5%;">
-                <span class="meta-label">FACTURA NO.:</span>
-                <span class="meta-val">#{{ venta_info.folio }}</span>
-            </td>
-            <td colspan="3" class="fecha-header">FECHA</td>
+            <th style="width:4%">#</th>
+            <th style="width:40%">Producto</th>
+            <th class="num" style="width:16%">Precio unit.</th>
+            <th class="num" style="width:10%">Cant.</th>
+            <th class="num" style="width:14%">Subtotal</th>
         </tr>
+    </thead>
+    <tbody>
+        {% for detalle in venta.detalles.all %}
         <tr>
-            <td>
-                <span class="meta-label">CLIENTE:</span>
-                <span class="meta-val">{{ cliente_info.nombre }}</span>
-                {% if cliente_info.rfc %} &nbsp;({{ cliente_info.rfc }}){% endif %}
-            </td>
-            <td class="fecha-cell">{{ venta_info.dia }}</td>
-            <td class="fecha-cell">{{ venta_info.mes }}</td>
-            <td class="fecha-cell">{{ venta_info.anio }}</td>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ detalle.producto.nombre }}</td>
+            <td class="num">${{ detalle.precio_unitario }}</td>
+            <td class="num">{{ detalle.cantidad }}</td>
+            <td class="num">${{ detalle.subtotal }}</td>
         </tr>
+        {% empty %}
         <tr>
-            <td colspan="4">
-                <span class="meta-label">DOMICILIO:</span>
-                <span>{{ cliente_info.domicilio }}</span>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <span class="meta-label">E-MAIL:</span>
-                <span>{{ cliente_info.email }}</span>
-            </td>
-            <td colspan="3">
-                <span class="meta-label">TEL.:</span>
-                <span>{{ cliente_info.telefono }}</span>
+            <td colspan="5" style="text-align:center;padding:16px;color:var(--muted);">
+                Sin l&iacute;neas de detalle registradas.
             </td>
         </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="total-section">
+    <table class="total-tabla">
+        {% with subtotal=venta.total iva_pct=config.iva_porcentaje %}
+        <tr>
+            <td class="lbl">Subtotal (sin IVA)</td>
+            <td class="val">${{ subtotal }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">IVA ({{ iva_pct }}%)</td>
+            <td class="val">
+                ${% widthratio subtotal 100 iva_pct %}
+            </td>
+        </tr>
+        <tr class="final">
+            <td class="lbl" style="font-size:11.5pt;">TOTAL</td>
+            <td class="val gold">${{ subtotal }}</td>
+        </tr>
+        {% endwith %}
     </table>
+</div>
 
-    <!-- TABLA DE PRODUCTOS VENDIDOS + TOTALES -->
-    <table class="items-grid" cellspacing="0" cellpadding="0">
-        <thead>
-            <tr class="dark-header-row">
-                <th class="col-cant">CANTIDAD</th>
-                <th class="col-desc">DESCRIPCI&Oacute;N</th>
-                <th class="col-unit">VALOR UNITARIO</th>
-                <th class="col-imp">IMPORTE</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items_pdf %}
-            <tr>
-                <td class="col-cant">{{ item.cantidad }}</td>
-                <td class="col-desc">
-                    <span class="prod-name">{{ item.nombre }}</span>
-                    {% if item.sku or item.categoria %}
-                        <span class="prod-extra">
-                            ({% if item.sku %}SKU: {{ item.sku }}{% endif %}{% if item.sku and item.categoria %} - {% endif %}{% if item.categoria %}{{ item.categoria }}{% endif %})
-                        </span>
-                    {% endif %}
-                </td>
-                <td class="col-unit">{{ empresa.moneda }}{{ item.precio_unitario|floatformat:2 }}</td>
-                <td class="col-imp">{{ empresa.moneda }}{{ item.subtotal|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-            {% for _ in empty_rows %}
-            <tr>
-                <td class="col-cant">&nbsp;</td>
-                <td class="col-desc">&nbsp;</td>
-                <td class="col-unit">&nbsp;</td>
-                <td class="col-imp">&nbsp;</td>
-            </tr>
-            {% endfor %}
-
-            <tr>
-                <td colspan="2" rowspan="{% if venta_info.descuento > 0 %}4{% else %}3{% endif %}" class="empresa-firma-box">
-                    {% if empresa.nombre_script_uri %}
-                        <img src="{{ empresa.nombre_script_uri }}" alt="{{ empresa.nombre }}" class="empresa-firma-script"><br>
-                    {% else %}
-                        <div class="empresa-firma-nombre">{{ empresa.nombre }}</div>
-                    {% endif %}
-                    <div class="empresa-firma-detalle">
-                        <div><strong>Lugar de emisi&oacute;n:</strong> {{ venta_info.lugar }}</div>
-                        <div><strong>Fecha y hora:</strong> {{ venta_info.dia }}/{{ venta_info.mes }}/{{ venta_info.anio }} {{ venta_info.hora }}</div>
-                        {% if venta_info.notas %}
-                            <div><strong>Notas:</strong> {{ venta_info.notas }}</div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="tot-label">SUBTOTAL</td>
-                <td class="tot-val">{{ empresa.moneda }}{{ venta_info.subtotal|floatformat:2 }}</td>
-            </tr>
-            {% if venta_info.descuento > 0 %}
-            <tr>
-                <td class="tot-label">DESCUENTO</td>
-                <td class="tot-val">-{{ empresa.moneda }}{{ venta_info.descuento|floatformat:2 }}</td>
-            </tr>
-            {% endif %}
-            <tr>
-                <td class="tot-label">IMPUESTO</td>
-                <td class="tot-val">{{ empresa.moneda }}{{ venta_info.impuestos|floatformat:2 }}</td>
-            </tr>
-            <tr>
-                <td class="tot-label">TOTAL</td>
-                <td class="tot-val">{{ empresa.moneda }}{{ venta_info.total|floatformat:2 }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <!-- PIE DE P?GINA EN 3 COLUMNAS -->
-    <table class="footer-table" cellspacing="0" cellpadding="0">
-        <tr class="footer-head">
-            <td>DIRECCI&Oacute;N</td>
-            <td>TEL&Eacute;FONO</td>
-            <td>SITIO WEB</td>
-        </tr>
-        <tr class="footer-body">
-            <td>
-                {{ empresa.direccion }}
-                {% if empresa.ciudad %}<br>{{ empresa.ciudad }}{% endif %}
-            </td>
-            <td>
-                {{ empresa.telefono }}
-                {% if empresa.email %}<br>{{ empresa.email }}{% endif %}
-            </td>
-            <td>
-                {{ empresa.sitio_web }}
-            </td>
-        </tr>
-    </table>
+<div class="nota">
+    <strong>Nota:</strong> Este documento es una representaci&oacute;n de la factura generada por
+    el sistema ERP Django de {{ config.nombre_empresa }}.
+    {% if config.rfc %}RFC: {{ config.rfc }}.{% endif %}
+    Generado el {{ hoy|date:"d/m/Y \a \l\a\s H:i" }} h.
+</div>
 
 </body>
 </html>

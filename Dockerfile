@@ -1,3 +1,7 @@
+# Dockerfile
+# ERP Django con WeasyPrint
+# Base: Python 3.11 sobre Debian Bookworm slim
+
 FROM python:3.11-slim-bookworm AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -23,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     curl \
+ && fc-cache -f -v 2>/dev/null && chmod -R 777 /var/cache/fontconfig 2>/dev/null || true \
  && rm -rf /var/lib/apt/lists/*
 
 FROM system-deps AS python-deps
@@ -39,13 +44,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN SECRET_KEY=build-placeholder-key \
-    DATABASE_URL=sqlite:////tmp/build.sqlite3 \
-    DJANGO_SETTINGS_MODULE=core.settings_prod \
-    python manage.py collectstatic --noinput
-
 RUN chmod +x docker-entrypoint.sh
 
-EXPOSE 10000
+EXPOSE 8000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

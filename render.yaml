@@ -1,8 +1,8 @@
-﻿# render.yaml — Configuración Docker para Render (erp-dandelion-star)
+# render.yaml — versión con Docker (reemplaza la versión buildpack)
 services:
-  # ── Aplicación Web Django + WeasyPrint ──────────────────────────
+
   - type: web
-    name: erp-dandelion-star
+    name: erp-django-utec
     env: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -18,22 +18,30 @@ services:
         value: "False"
       - key: DATABASE_URL
         fromDatabase:
-          name: erp-dandelion-star-db
+          name: erp-django-db
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
-          name: erp-dandelion-star-redis
+          name: erp-django-redis
           property: connectionString
       - key: REDIS_CACHE_URL
         fromService:
           type: redis
-          name: erp-dandelion-star-redis
+          name: erp-django-redis
           property: connectionString
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
       - key: DEFAULT_FROM_EMAIL
-        value: "ERP Dandelion Star <noreply@erp-dandelion-star.com>"
+        value: "ERP Django <noreply@erp-django.com>"
       - key: ADMIN_EMAIL
         sync: false
       - key: AWS_ACCESS_KEY_ID
@@ -43,17 +51,57 @@ services:
       - key: AWS_STORAGE_BUCKET_NAME
         sync: false
 
-  # ── Redis (Caché / Sesiones) ────────────────────────────────────
-  - type: redis
-    name: erp-dandelion-star-redis
+  - type: worker
+    name: erp-django-celery-worker
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
-    region: oregon
-    ipAllowList: []
+    startCommand: celery -A core worker -l info -Q erp_django
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings_prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: erp-django-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: erp-django-redis
+          property: connectionString
+      - key: SENDGRID_API_KEY
+        sync: false
+
+  - type: worker
+    name: erp-django-celery-beat
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    numInstances: 1
+    startCommand: celery -A core beat -l info
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings_prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: erp-django-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: erp-django-redis
+          property: connectionString
 
 databases:
-  # ── Base de Datos PostgreSQL ────────────────────────────────────
-  - name: erp-dandelion-star-db
+  - name: erp-django-db
     plan: free
     region: oregon
     databaseName: erp_db
     user: erp_user
+
+  - name: erp-django-redis
+    type: redis
+    plan: free
+    region: oregon
