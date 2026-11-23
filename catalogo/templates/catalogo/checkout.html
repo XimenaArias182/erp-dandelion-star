@@ -50,7 +50,7 @@
                         <span style="color:#6c757d;font-size:.82rem;">× {{ datos.cantidad }}</span>
                     </td>
                     <td style="text-align:right;font-weight:600;font-size:.9rem;padding:.4rem 0;">
-                        ${% widthratio datos.cantidad 1 datos.precio %}
+                        ${{ datos.subtotal }}
                     </td>
                 </tr>
                 {% endfor %}

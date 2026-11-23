@@ -213,8 +213,16 @@ def checkout(request):
                 idempotency_key=f'pedido-{pedido.pk}',
             )
 
+            carrito_vista = {
+                k: {
+                    **v,
+                    'subtotal': f"{Decimal(str(v.get('precio', 0))) * int(v.get('cantidad', 1)):.2f}"
+                }
+                for k, v in carrito.items()
+            }
+
             return render(request, 'catalogo/checkout.html', {
-                'carrito': carrito,
+                'carrito': carrito_vista,
                 'totales': totales,
                 'pedido': pedido,
                 'client_secret': intent.client_secret,
@@ -235,8 +243,16 @@ def checkout(request):
             )
             return redirect('catalogo:pago_error')
 
+    carrito_vista = {
+        k: {
+            **v,
+            'subtotal': f"{Decimal(str(v.get('precio', 0))) * int(v.get('cantidad', 1)):.2f}"
+        }
+        for k, v in carrito.items()
+    }
+
     return render(request, 'catalogo/checkout.html', {
-        'carrito': carrito,
+        'carrito': carrito_vista,
         'totales': totales,
         'client_secret': None,
         'publishable_key': publishable_key,
