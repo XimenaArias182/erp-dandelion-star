@@ -267,3 +267,21 @@ CELERY_TASK_TIME_LIMIT = 360
 CELERY_TASK_DEFAULT_QUEUE = 'erp_django'
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TASK_EAGER_PROPAGATES = True
+
+
+# ?? ALMACENAMIENTO PERMANENTE DE IM?GENES EN CLOUDINARY ???????????????????
+import os as _os_cld
+from urllib.parse import urlparse as _urlparse_cld
+
+_cloudinary_url = _os_cld.environ.get('CLOUDINARY_URL', '').strip()
+if _cloudinary_url:
+    _parsed_cld = _urlparse_cld(_cloudinary_url)
+    for _app in ('cloudinary_storage', 'cloudinary'):
+        if _app not in INSTALLED_APPS:
+            INSTALLED_APPS.append(_app)
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _parsed_cld.hostname or '',
+        'API_KEY': _parsed_cld.username or '',
+        'API_SECRET': _parsed_cld.password or '',
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
