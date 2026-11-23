@@ -135,15 +135,8 @@ class VentaDetailView(DetailView):
         return context
 
 
-# ?? Comprobante PDF de Venta ???????????????????????????????????????????????
-from io import BytesIO
-from pathlib import Path as _PdfPath
-from django.contrib.auth.decorators import login_required as _login_required
-from django.contrib.staticfiles import finders as _finders
-from django.http import HttpResponse as _HttpResponse
-from django.shortcuts import get_object_or_404 as _get_object_or_404
-from django.template.loader import render_to_string as _render_to_string
-from .models import Venta as _Venta
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 
 @login_required

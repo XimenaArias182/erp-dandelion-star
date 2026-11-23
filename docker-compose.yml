@@ -50,6 +50,9 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: core.settings_prod
+      DB_SSL_REQUIRE: "False"
+      SECURE_SSL_REDIRECT: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,web,testserver,.onrender.com"
       DATABASE_URL:   postgresql://${POSTGRES_USER:-erp_user}:${POSTGRES_PASSWORD:-erp_pass_local}@db:5432/${POSTGRES_DB:-erp_db}
       REDIS_URL:      redis://redis:6379/0
       REDIS_CACHE_URL: redis://redis:6379/1
@@ -73,6 +76,9 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: core.settings_prod
+      DB_SSL_REQUIRE: "False"
+      SECURE_SSL_REDIRECT: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,web,testserver,.onrender.com"
       DATABASE_URL:   postgresql://${POSTGRES_USER:-erp_user}:${POSTGRES_PASSWORD:-erp_pass_local}@db:5432/${POSTGRES_DB:-erp_db}
       REDIS_URL:      redis://redis:6379/0
 
@@ -94,6 +100,9 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: core.settings_prod
+      DB_SSL_REQUIRE: "False"
+      SECURE_SSL_REDIRECT: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,web,testserver,.onrender.com"
       DATABASE_URL:   postgresql://${POSTGRES_USER:-erp_user}:${POSTGRES_PASSWORD:-erp_pass_local}@db:5432/${POSTGRES_DB:-erp_db}
       REDIS_URL:      redis://redis:6379/0
 
@@ -113,6 +122,9 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: core.settings_prod
+      DB_SSL_REQUIRE: "False"
+      SECURE_SSL_REDIRECT: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0,web,testserver,.onrender.com"
       REDIS_URL:      redis://redis:6379/0
 
 volumes:
