@@ -1,3 +1,4 @@
+import traceback
 """Vistas del módulo de catálogo, carrito y checkout — W13 a W16."""
 from decimal import Decimal
 
@@ -237,6 +238,7 @@ def checkout(request):
             return redirect('catalogo:pago_error')
 
         except Exception as exc:
+            print('CHECKOUT_ERROR:', traceback.format_exc(), flush=True)
             messages.error(
                 request,
                 f'Error inesperado en el proceso de pago: {exc}'
