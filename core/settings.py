@@ -285,3 +285,12 @@ if _cloudinary_url:
         'API_SECRET': _parsed_cld.password or '',
     }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+# ?? GARANTIZAR SIN DUPLICADOS Y STORAGE CLOUDINARY ACTIVO ?????????????????
+import os as _os_fix
+INSTALLED_APPS = list(dict.fromkeys(INSTALLED_APPS))
+if _os_fix.environ.get('CLOUDINARY_URL', '').strip():
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    if 'STORAGES' in globals():
+        STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
