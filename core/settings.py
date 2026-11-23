@@ -311,3 +311,22 @@ if _raw_cloudinary_url.startswith('cloudinary://'):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     if 'STORAGES' in globals():
         STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
+
+
+# ?? CONFIGURACI?N DE CORREO TRANSACCIONAL (SENDGRID SMTP) ???????????????
+import os as _os_mail
+
+_sendgrid_key = _os_mail.environ.get('SENDGRID_API_KEY', '').strip()
+DEFAULT_FROM_EMAIL = _os_mail.environ.get('DEFAULT_FROM_EMAIL', 'noreply@example.com').strip()
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+ADMIN_EMAIL = _os_mail.environ.get('ADMIN_EMAIL', DEFAULT_FROM_EMAIL).strip()
+
+if _sendgrid_key:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.sendgrid.net'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = 'apikey'
+    EMAIL_HOST_PASSWORD = _sendgrid_key
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
