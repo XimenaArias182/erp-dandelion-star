@@ -28,3 +28,5 @@ pydyf==0.10.0
 # xhtml2pdf   # fallback opcional sin dependencias nativas
 celery==5.3.6
 flower==2.0.1
+cloudinary==1.41.0
+django-cloudinary-storage==0.3.0

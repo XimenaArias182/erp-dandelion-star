@@ -29,6 +29,18 @@ import dj_database_url
 #   AWS_S3_REGION_NAME      → Región (ej. us-east-1)
 #   AWS_S3_CUSTOM_DOMAIN    → Dominio CDN opcional
 
+_cloudinary_url = os.environ.get('CLOUDINARY_URL', '').strip()
+if _cloudinary_url:
+    from urllib.parse import urlparse as _urlparse
+    _parsed_cld = _urlparse(_cloudinary_url)
+    INSTALLED_APPS = list(INSTALLED_APPS) + ['cloudinary_storage', 'cloudinary']
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _parsed_cld.hostname or '',
+        'API_KEY': _parsed_cld.username or '',
+        'API_SECRET': _parsed_cld.password or '',
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 _bucket = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
 
 if _bucket:
