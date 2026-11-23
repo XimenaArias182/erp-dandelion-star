@@ -142,12 +142,16 @@ from django.http import HttpResponse
 @login_required
 def venta_pdf(request, venta_id: int) -> HttpResponse:
     """Genera y descarga la factura de una venta en formato PDF con WeasyPrint."""
+    import base64
+    from decimal import Decimal
+    from pathlib import Path
     import weasyprint
-    from django.utils import timezone
     from django.conf import settings
+    from django.contrib.staticfiles import finders
     from django.http import HttpResponse
     from django.shortcuts import get_object_or_404
     from django.template.loader import render_to_string
+    from django.utils import timezone
     from configuracion.models import ConfiguracionERP
     from .models import Venta
 
@@ -159,10 +163,86 @@ def venta_pdf(request, venta_id: int) -> HttpResponse:
     )
 
     config = ConfiguracionERP.get_instance()
+    ahora = timezone.localtime(timezone.now())
+    fecha_doc = getattr(venta, 'fecha', None) or ahora
+
+    cliente = getattr(venta, 'cliente', None)
+    cliente_nombre = getattr(cliente, 'nombre', '') if cliente else 'Público General'
+    cliente_domicilio = (
+        getattr(cliente, 'direccion', '')
+        or getattr(cliente, 'domicilio', '')
+        or ''
+    ) if cliente else ''
+    cliente_email = getattr(cliente, 'email', '') or getattr(cliente, 'correo', '') if cliente else ''
+    cliente_telefono = getattr(cliente, 'telefono', '') or getattr(cliente, 'celular', '') if cliente else ''
+
+    # Buscar logo en ConfiguracionERP o en archivos estáticos
+    logo_src = ''
+    logo_field = getattr(config, 'logo', None)
+    if logo_field and getattr(logo_field, 'name', ''):
+        try:
+            logo_path = Path(logo_field.path)
+            if logo_path.exists():
+                ext = logo_path.suffix.lstrip('.').lower() or 'png'
+                if ext == 'jpg':
+                    ext = 'jpeg'
+                b64 = base64.b64encode(logo_path.read_bytes()).decode('ascii')
+                logo_src = f'data:image/{ext};base64,{b64}'
+        except Exception:
+            try:
+                logo_src = logo_field.url
+            except Exception:
+                logo_src = ''
+
+    if not logo_src:
+        for rel_static in ('img/logo.png', 'img/logo_dandelion.png', 'images/logo.png', 'logo.png'):
+            found = finders.find(rel_static)
+            if found and Path(found).exists():
+                p = Path(found)
+                ext = p.suffix.lstrip('.').lower() or 'png'
+                b64 = base64.b64encode(p.read_bytes()).decode('ascii')
+                logo_src = f'data:image/{ext};base64,{b64}'
+                break
+
+    detalles = list(venta.detalles.all())
+    filas_vacias = range(max(0, 10 - len(detalles)))
+
+    total_val = Decimal(str(getattr(venta, 'total', 0) or 0))
+    subtotal_val = Decimal(str(getattr(venta, 'subtotal', total_val) or total_val))
+    impuesto_val = Decimal(str(getattr(venta, 'impuesto', Decimal('0.00')) or Decimal('0.00')))
+
+    empresa_nombre = getattr(config, 'nombre_empresa', '') or 'Dandelion Star'
+    if empresa_nombre.strip().lower() in ('mi empresa erp', 'mi empresa'):
+        empresa_nombre = 'Dandelion Star'
+
+    empresa_direccion = getattr(config, 'direccion', '') or 'Celaya, Guanajuato, México'
+    empresa_telefono = getattr(config, 'telefono', '') or ''
+    empresa_web = (
+        getattr(config, 'sitio_web', '')
+        or getattr(config, 'web', '')
+        or 'erp-dandelion-star.onrender.com'
+    )
+    metodo_pago = getattr(venta, 'metodo_pago', '') or getattr(venta, 'tipo_pago', '') or 'Contado'
+
     context = {
         'venta': venta,
         'config': config,
-        'hoy': timezone.now(),
+        'hoy': ahora,
+        'fecha_doc': fecha_doc,
+        'cliente_nombre': cliente_nombre,
+        'cliente_domicilio': cliente_domicilio,
+        'cliente_email': cliente_email,
+        'cliente_telefono': cliente_telefono,
+        'logo_src': logo_src,
+        'detalles': detalles,
+        'filas_vacias': filas_vacias,
+        'subtotal': subtotal_val,
+        'impuesto': impuesto_val,
+        'empresa_nombre': empresa_nombre,
+        'empresa_direccion': empresa_direccion,
+        'empresa_telefono': empresa_telefono,
+        'empresa_web': empresa_web,
+        'metodo_pago': metodo_pago,
     }
 
     html_string = render_to_string(
