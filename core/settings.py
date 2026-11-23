@@ -294,3 +294,20 @@ if _os_fix.environ.get('CLOUDINARY_URL', '').strip():
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     if 'STORAGES' in globals():
         STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
+
+
+# ?? PARSEAR CREDENCIALES PARA DJANGO-CLOUDINARY-STORAGE ??????????????????
+import os as _os_c
+from urllib.parse import urlparse as _urlparse_c
+
+_raw_cloudinary_url = _os_c.environ.get('CLOUDINARY_URL', '').strip()
+if _raw_cloudinary_url.startswith('cloudinary://'):
+    _u = _urlparse_c(_raw_cloudinary_url)
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _u.hostname or '',
+        'API_KEY': _u.username or '',
+        'API_SECRET': _u.password or '',
+    }
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    if 'STORAGES' in globals():
+        STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
