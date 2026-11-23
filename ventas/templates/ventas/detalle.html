@@ -542,6 +542,10 @@
         </div>
         {% endfor %}
     </div>
+
+    <div class="ds-pdf-bottom-bar">
+        <a href="{% url 'ventas:pdf' venta.pk %}" class="ds-btn-pdf-primary">Descargar PDF</a>
+    </div>
 </div>
 
 <script>
