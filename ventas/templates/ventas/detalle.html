@@ -71,6 +71,15 @@
         display: flex;
         justify-content: flex-end;
     }
+    .ds-pdf-bottom-bar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        width: 100%;
+        margin-top: 28px;
+        padding-top: 12px;
+        clear: both;
+    }
 </style>
 
 {% if comprobante or request.GET.comprobante == '1' %}
@@ -86,9 +95,6 @@
     </div>
 </div>
 {% else %}
-<div class="ds-pdf-toolbar" id="ds-comprobante-banner">
-    <a href="{% url 'ventas:pdf' venta.pk %}" class="ds-btn-pdf-primary">Descargar PDF</a>
-</div>
 {% endif %}
 <style id="ds-luxury-editorial-grid-style">
     .ds-cat-shell {
