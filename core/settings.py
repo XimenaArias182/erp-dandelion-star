@@ -330,3 +330,9 @@ if _sendgrid_key:
     EMAIL_HOST_PASSWORD = _sendgrid_key
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# ?? ENV?O DE CORREOS POR API HTTP DE SENDGRID (PUERTO 443) ???????????????
+import os as _os_sg_api
+if _os_sg_api.environ.get('SENDGRID_API_KEY', '').strip():
+    EMAIL_BACKEND = 'core.sendgrid_backend.SendGridAPIBackend'
