@@ -202,36 +202,16 @@
           {% if item.producto.imagen %}
             <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}">
           {% else %}
-            <span style="color:#9ca3af;font-size:12px;"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#EDEDED;border-radius:8px;" title="Imagen predeterminada Dandelion Star"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="68" height="68" fill="none">
-  <!-- Cara superior -->
-  <path d="M50 14 L84 31 L50 48 L16 31 Z" fill="#E3E3E3" stroke="#8C8C8C" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M33 22.5 L67 39.5" stroke="#8C8C8C" stroke-width="2" stroke-linecap="round"/>
-  <!-- Cara izquierda -->
-  <path d="M16 31 L50 48 L50 86 L16 68 Z" fill="#D6D6D6" stroke="#8C8C8C" stroke-width="2.4" stroke-linejoin="round"/>
-  <!-- Cara derecha -->
-  <path d="M50 48 L84 31 L84 68 L50 86 Z" fill="#EFEFEF" stroke="#8C8C8C" stroke-width="2.4" stroke-linejoin="round"/>
-  <!-- Emblema diente de leon en cara derecha -->
-  <path d="M62 73 Q64.5 63.5 68 55" stroke="#7A7A7A" stroke-width="1.6" stroke-linecap="round"/>
-  <circle cx="68" cy="54" r="2" fill="#7A7A7A"/>
-  <g stroke="#7A7A7A" stroke-width="1.2" stroke-linecap="round">
-    <line x1="68" y1="54" x2="68" y2="44"/>
-    <line x1="68" y1="54" x2="75.5" y2="47"/>
-    <line x1="68" y1="54" x2="78" y2="54.5"/>
-    <line x1="68" y1="54" x2="74.5" y2="61.5"/>
-    <line x1="68" y1="54" x2="60.5" y2="47"/>
-    <line x1="68" y1="54" x2="58.5" y2="54.5"/>
-    <line x1="68" y1="54" x2="61.5" y2="61"/>
-  </g>
-  <g fill="#7A7A7A">
-    <circle cx="68" cy="43.5" r="1.1"/>
-    <circle cx="76" cy="46.5" r="1.1"/>
-    <circle cx="78.5" cy="54.5" r="1.1"/>
-    <circle cx="75" cy="62" r="1.1"/>
-    <circle cx="60" cy="46.5" r="1.1"/>
-    <circle cx="58" cy="54.5" r="1.1"/>
-    <circle cx="61" cy="61.5" r="1.1"/>
-  </g>
-</svg></div></span>
+            <span style="color:#9ca3af;font-size:12px;">{% if item.imagen %}
+    <img src="{{ item.imagen }}"
+         alt="{{ item.nombre }}"
+         onerror="this.onerror=null;this.src='{% static 'img/producto_default.svg' %}';"
+         style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+{% else %}
+    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#EDEDED;border-radius:8px;">
+        <img src="{% static 'img/producto_default.svg' %}" alt="{{ item.nombre }}" style="width:68px;height:68px;object-fit:contain;">
+    </div>
+{% endif %}</span>
           {% endif %}
         </div>
 
