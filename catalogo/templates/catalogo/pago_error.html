@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Error en el pago{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:center;align-items:center;min-height:60vh;">
+    <div class="erp-card" style="max-width:480px;width:100%;text-align:center;padding:2rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
+        <div style="font-size:4rem;margin-bottom:1rem;">❌</div>
+        <h2 style="color:#c0392b;margin:0 0 .5rem;">Error en el pago</h2>
+        <p style="color:#6c757d;margin-bottom:1.5rem;">
+            No pudimos procesar tu pago. Tu carrito sigue intacto — puedes intentarlo de nuevo.
+        </p>
+
+        <div style="margin-bottom:1.5rem;text-align:left;padding:1rem;background:#fdf2f2;border-left:4px solid #c0392b;border-radius:6px;">
+            <strong>Posibles causas:</strong>
+            <ul style="margin:.5rem 0 0;padding-left:1.2rem;font-size:.9rem;">
+                <li>Fondos insuficientes en la tarjeta</li>
+                <li>Datos de tarjeta incorrectos</li>
+                <li>Tarjeta bloqueada por el banco</li>
+                <li>Problema temporal de conexión con Stripe</li>
+            </ul>
+        </div>
+
+        <div style="display:flex;gap:.75rem;justify-content:center;">
+            <a href="{% url 'catalogo:carrito' %}" class="btn-erp-primary" style="padding:9px 16px;background:#1c1c1c;color:#fff;border-radius:6px;text-decoration:none;">
+                ← Volver al carrito
+            </a>
+            <a href="{% url 'catalogo:checkout' %}" class="btn-erp-gold" style="padding:9px 16px;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+                Reintentar pago
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -196,6 +196,17 @@ class Pedido(models.Model):
                     'a la fecha del pedido.'
                 )
             })
+    items_snapshot = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Snapshot de items del carrito',
+        help_text=(
+            'Copia del carrito al momento de crear el pedido. '
+            'Estructura: [{"producto_id": 1, "nombre": "...", '
+            '"cantidad": 2, "precio": "500.00"}]'
+        )
+    )
+
     class Meta:
         verbose_name        = 'Pedido'
         verbose_name_plural = 'Pedidos'

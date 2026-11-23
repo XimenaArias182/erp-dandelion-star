@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'rest_framework',
+    'django_filters',
     'rest_framework.authtoken', 
     'whitenoise.runserver_nostatic',
     # Apps del ERP
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'proveedores',
     'productos',
     'ventas',
+    'catalogo',
     'reportes',
     'configuracion',
 ]
@@ -69,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'catalogo.context_processors.carrito_info',
             ],
         },
     },
@@ -241,3 +244,26 @@ if 'DATABASE_URL' in os.environ:
         conn_max_age=600,
         conn_health_checks=True,
     )
+
+
+# ── STRIPE (Pasarela de pago — W14/W15) ────────────────────────────────────
+import os as _os
+STRIPE_SECRET_KEY = _os.environ.get('STRIPE_SECRET_KEY', 'sk_test_placeholder')
+STRIPE_PUBLISHABLE_KEY = _os.environ.get('STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
+STRIPE_WEBHOOK_SECRET = _os.environ.get('STRIPE_WEBHOOK_SECRET', 'whsec_placeholder')
+
+
+# ── CELERY — Cola de tareas asíncronas (W16) ───────────────────────────────
+import os as _os_celery
+CELERY_BROKER_URL = _os_celery.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = _os_celery.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_SOFT_TIME_LIMIT = 300
+CELERY_TASK_TIME_LIMIT = 360
+CELERY_TASK_DEFAULT_QUEUE = 'erp_django'
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_EAGER_PROPAGATES = True

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Mi carrito{% endblock %}
+
+{% block content %}
+<div class="erp-page-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+    <h2 style="margin:0;">🛍️ Mi carrito</h2>
+    <a href="{% url 'catalogo:catalogo' %}" class="btn-erp-primary" style="padding:8px 14px;background:#1c1c1c;color:#fff;border-radius:6px;text-decoration:none;">
+        ← Seguir comprando
+    </a>
+</div>
+
+{% if items %}
+<div class="erp-card" style="padding:1.25rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
+    <table class="erp-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr style="border-bottom:2px solid #e5e5e5;">
+                <th style="text-align:left;padding:.6rem;">Producto</th>
+                <th style="text-align:right;padding:.6rem;">Precio unit.</th>
+                <th style="width:140px;text-align:center;padding:.6rem;">Cantidad</th>
+                <th style="text-align:right;padding:.6rem;">Subtotal</th>
+                <th style="width:60px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="font-weight:600;padding:.6rem;">{{ item.nombre }}</td>
+                <td style="text-align:right;padding:.6rem;">${{ item.precio }}</td>
+                <td style="text-align:center;padding:.6rem;">
+                    <form method="post" action="{% url 'catalogo:actualizar' item.prod_id %}"
+                          style="display:flex;align-items:center;gap:.25rem;justify-content:center;">
+                        {% csrf_token %}
+                        <input type="number" name="cantidad" value="{{ item.cantidad }}" min="0" max="99"
+                               class="erp-input" style="width:60px;text-align:center;padding:.3rem .5rem;">
+                        <button type="submit" class="btn-erp-primary btn-erp-sm">↻</button>
+                    </form>
+                </td>
+                <td style="text-align:right;font-weight:600;color:#8d6e26;padding:.6rem;">
+                    ${{ item.subtotal }}
+                </td>
+                <td style="text-align:center;padding:.6rem;">
+                    <form method="post" action="{% url 'catalogo:remover' item.prod_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-erp-danger btn-erp-sm" title="Eliminar">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="background:#fafafa;">
+                <td colspan="3" style="padding:.75rem 1rem;font-weight:600;text-align:right;">
+                    Total del carrito:
+                </td>
+                <td style="padding:.75rem 1rem;font-weight:700;font-size:1.2rem;text-align:right;color:#8d6e26;">
+                    ${{ total }}
+                </td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;align-items:center;">
+    <form method="post" action="{% url 'catalogo:vaciar' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-erp-danger"
+                style="padding:9px 16px;background:#c0392b;color:#fff;border:none;border-radius:6px;cursor:pointer;"
+                onclick="return confirm('¿Vaciar el carrito?')">
+            🗑️ Vaciar carrito
+        </button>
+    </form>
+
+    {% if user.is_authenticated %}
+    <a href="{% url 'catalogo:checkout' %}"
+       class="btn-erp-gold" style="font-size:1rem;padding:.55rem 1.5rem;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        💳 Proceder al pago →
+    </a>
+    {% else %}
+    <a href="{% url 'account_login' %}?next={% url 'catalogo:checkout' %}"
+       class="btn-erp-gold" style="padding:.55rem 1.5rem;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        🔐 Inicia sesión para pagar
+    </a>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="erp-card" style="text-align:center;padding:3rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
+    <p style="font-size:3rem;margin:0;">🛒</p>
+    <p style="color:#6c757d;margin:.5rem 0 1.5rem;">Tu carrito está vacío.</p>
+    <a href="{% url 'catalogo:catalogo' %}" class="btn-erp-gold" style="padding:10px 20px;background:#8d6e26;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        Ver catálogo de productos
+    </a>
+</div>
+{% endif %}
+{% endblock %}
