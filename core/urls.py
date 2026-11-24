@@ -8,6 +8,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.authtoken.views import obtain_auth_token
 from . import views
+from catalogo.webhook_views import stripe_webhook
 
 # Importar y combinar todas las URLs de la API
 from productos.api_urls   import urlpatterns as productos_api
@@ -35,6 +36,10 @@ urlpatterns = [
     path('',            views.bienvenida,             name='inicio'),
     path('accounts/',   include('allauth.urls')),
     path('logo/', views.logo, name='logo'),
+
+    # Webhook de Stripe en la raíz
+    path('webhook/stripe/', stripe_webhook, name='stripe_webhook'),
+
     # API REST
     path('api/',        include((api_urlpatterns, 'api'))),
     path('api/auth/token/', obtain_auth_token, name='api_token'),
