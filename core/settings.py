@@ -269,7 +269,7 @@ CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TASK_EAGER_PROPAGATES = True
 
 
-# ?? ALMACENAMIENTO PERMANENTE DE IM?GENES EN CLOUDINARY ???????????????????
+#ALMACENAMIENTO PERMANENTE DE IM?GENES EN CLOUDINARY 
 import os as _os_cld
 from urllib.parse import urlparse as _urlparse_cld
 
@@ -287,7 +287,7 @@ if _cloudinary_url:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
-# ?? GARANTIZAR SIN DUPLICADOS Y STORAGE CLOUDINARY ACTIVO ?????????????????
+#GARANTIZAR SIN DUPLICADOS Y STORAGE CLOUDINARY ACTIVO
 import os as _os_fix
 INSTALLED_APPS = list(dict.fromkeys(INSTALLED_APPS))
 if _os_fix.environ.get('CLOUDINARY_URL', '').strip():
@@ -296,7 +296,7 @@ if _os_fix.environ.get('CLOUDINARY_URL', '').strip():
         STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
 
 
-# ?? PARSEAR CREDENCIALES PARA DJANGO-CLOUDINARY-STORAGE ??????????????????
+#PARSEAR CREDENCIALES PARA DJANGO-CLOUDINARY-STORAGE 
 import os as _os_c
 from urllib.parse import urlparse as _urlparse_c
 
@@ -313,7 +313,7 @@ if _raw_cloudinary_url.startswith('cloudinary://'):
         STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
 
 
-# ?? CONFIGURACI?N DE CORREO TRANSACCIONAL (SENDGRID SMTP) ???????????????
+#CONFIGURACION DE CORREO TRANSACCIONAL (SENDGRID SMTP) ???????????????
 import os as _os_mail
 
 _sendgrid_key = _os_mail.environ.get('SENDGRID_API_KEY', '').strip()
@@ -332,7 +332,7 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
-# ?? ENV?O DE CORREOS POR API HTTP DE SENDGRID (PUERTO 443) ???????????????
+#ENVIO DE CORREOS POR API HTTP DE SENDGRID (PUERTO 443) 
 import os as _os_sg_api
 if _os_sg_api.environ.get('SENDGRID_API_KEY', '').strip():
     EMAIL_BACKEND = 'core.sendgrid_backend.SendGridAPIBackend'

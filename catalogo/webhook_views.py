@@ -1,15 +1,17 @@
 """Endpoint de webhook para recibir eventos de Stripe — W15 + W16."""
+from decimal import Decimal
 import logging
 
 import stripe
 from django.conf import settings
+from django.db import transaction
 from django.db.models import F
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from productos.models import Producto
-from ventas.models import Pedido
+from ventas.models import DetalleVenta, Pedido, Venta
 from ventas.tasks import enviar_confirmacion_pedido
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ def stripe_webhook(request) -> HttpResponse:
 
 
 def _manejar_pago_exitoso(payment_intent: dict) -> None:
-    """Actualiza el Pedido a pagado, descuenta stock y encola confirmación."""
+    """Actualiza el Pedido a pagado, descuenta stock, registra Venta y encola confirmación."""
     pedido_id = _extraer_pedido_id(payment_intent)
     if pedido_id is None:
         return
@@ -61,10 +63,13 @@ def _manejar_pago_exitoso(payment_intent: dict) -> None:
         return
 
     if pedido.estado != 'pagado':
-        pedido.estado = 'pagado'
-        pedido.save(update_fields=['estado'])
-        logger.info(f'Pedido {pedido.numero_pedido} actualizado a "pagado".')
-        _descontar_stock(pedido)
+        with transaction.atomic():
+            pedido.estado = 'pagado'
+            pedido.save(update_fields=['estado'])
+            logger.info(f'Pedido {pedido.numero_pedido} actualizado a "pagado".')
+            _descontar_stock(pedido)
+            _registrar_venta(pedido)
+
         try:
             enviar_confirmacion_pedido.delay(pedido.pk)
         except Exception as _celery_err:
@@ -134,3 +139,32 @@ def _descontar_stock(pedido: 'Pedido') -> None:
             logger.info(f'Stock decrementado: Producto {producto_id} - {cantidad} unidades.')
         else:
             logger.warning(f'Producto {producto_id}: stock insuficiente para decrementar {cantidad}.')
+
+
+def _registrar_venta(pedido: 'Pedido') -> None:
+    """Crea el registro en Venta y DetalleVenta a partir del Pedido pagado."""
+    items = pedido.items_snapshot or []
+    if not items:
+        return
+
+    venta = Venta.objects.create(cliente=pedido.cliente)
+    for item in items:
+        producto_id = item.get('producto_id')
+        cantidad = int(item.get('cantidad', 0))
+        if not producto_id or cantidad <= 0:
+            continue
+
+        producto = Producto.objects.filter(pk=producto_id).first()
+        if not producto:
+            continue
+
+        precio_raw = item.get('precio')
+        precio_unit = Decimal(str(precio_raw)) if precio_raw is not None else producto.precio
+
+        DetalleVenta.objects.create(
+            venta=venta,
+            producto=producto,
+            cantidad=cantidad,
+            precio_unitario=precio_unit,
+        )
+    logger.info(f'Venta #{venta.pk} registrada desde Pedido {pedido.numero_pedido}.')
