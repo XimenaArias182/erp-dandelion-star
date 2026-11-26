@@ -27,6 +27,35 @@
         opacity: .7;
         cursor: not-allowed;
     }
+    .cliente-tabs {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: 1rem;
+    }
+    .cliente-tab {
+        flex: 1;
+        padding: .55rem .75rem;
+        border: 1.5px solid #d0d7de;
+        border-radius: 6px;
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: .88rem;
+        cursor: pointer;
+        text-align: center;
+    }
+    .cliente-tab.active {
+        border-color: #8d6e26;
+        background: #fdf9f0;
+        color: #8d6e26;
+    }
+    .form-campo {
+        width: 100%;
+        padding: .55rem .75rem;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        font-size: .92rem;
+        margin-top: .25rem;
+    }
 </style>
 {% endblock %}
 
@@ -72,14 +101,15 @@
         {% if pedido %}
         <div class="erp-alert-info" style="margin-top:1rem;padding:1rem;background:#eef5fc;border-radius:6px;">
             <strong>Pedido creado:</strong> {{ pedido.numero_pedido }}<br>
-            <small style="color:#6c757d;">Completa el pago para confirmar tu pedido.</small>
+            <strong>Cliente:</strong> {{ pedido.cliente.nombre }} ({{ pedido.cliente.correo }})<br>
+            <small style="color:#6c757d;">Completa el pago para confirmar tu pedido y enviar el correo.</small>
         </div>
         {% endif %}
     </div>
 
     <div class="col-md-7">
         <div class="erp-card" style="padding:1.25rem;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
-            <div class="erp-card-header" style="font-weight:700;margin-bottom:.75rem;">🔒 Datos de pago</div>
+            <div class="erp-card-header" style="font-weight:700;margin-bottom:.75rem;">🔒 Datos del cliente y pago</div>
 
             {% if client_secret %}
             <p style="color:#6c757d;font-size:.85rem;margin-bottom:1rem;">
@@ -94,18 +124,58 @@
 
             <button id="submit-btn" class="btn-erp-gold"
                     style="width:100%;padding:.65rem;font-size:1rem;background:#8d6e26;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
-                🔐 Confirmar pago de ${{ totales.total }}
+                🔒 Confirmar pago de ${{ totales.total }}
             </button>
 
             <p style="text-align:center;margin-top:.75rem;color:#6c757d;font-size:.78rem;">
                 Tarjeta de prueba: <code>4242 4242 4242 4242</code> · cualquier fecha futura · cualquier CVC
             </p>
             {% else %}
-            <p style="margin-bottom:1.5rem;color:#6c757d;">
-                Haz clic en "Proceder al pago" para generar tu pedido e introducir los datos de tu tarjeta.
+            <p style="margin-bottom:1rem;color:#6c757d;font-size:.9rem;">
+                Registra los datos del cliente (con su correo para enviarle la confirmación) o selecciona uno ya existente antes de proceder al pago.
             </p>
-            <form method="post">
+
+            <form method="post" id="cliente-checkout-form">
                 {% csrf_token %}
+                <input type="hidden" name="modo_cliente" id="modo_cliente" value="nuevo">
+
+                <div class="cliente-tabs">
+                    <button type="button" class="cliente-tab active" id="tab-nuevo" onclick="cambiarModoCliente('nuevo')">
+                        ➕ Registrar cliente con correo
+                    </button>
+                    <button type="button" class="cliente-tab" id="tab-existente" onclick="cambiarModoCliente('existente')">
+                        👤 Seleccionar cliente existente
+                    </button>
+                </div>
+
+                <div id="panel-nuevo" style="margin-bottom:1.25rem;">
+                    <div style="margin-bottom:.75rem;">
+                        <label style="font-weight:600;font-size:.88rem;">Nombre completo o razón social *</label>
+                        <input type="text" name="nuevo_nombre" id="nuevo_nombre" class="form-campo"
+                               placeholder="Ej. María López" required>
+                    </div>
+                    <div style="margin-bottom:.75rem;">
+                        <label style="font-weight:600;font-size:.88rem;">Correo electrónico (para envío de comprobante) *</label>
+                        <input type="email" name="nuevo_correo" id="nuevo_correo" class="form-campo"
+                               placeholder="cliente@correo.com" required>
+                    </div>
+                    <div>
+                        <label style="font-weight:600;font-size:.88rem;">Teléfono (opcional)</label>
+                        <input type="text" name="nuevo_telefono" id="nuevo_telefono" class="form-campo"
+                               placeholder="Ej. 4421234567">
+                    </div>
+                </div>
+
+                <div id="panel-existente" style="display:none;margin-bottom:1.25rem;">
+                    <label style="font-weight:600;font-size:.88rem;">Selecciona un cliente registrado *</label>
+                    <select name="cliente_id" id="cliente_id" class="form-campo">
+                        <option value="">-- Elige un cliente --</option>
+                        {% for c in clientes %}
+                        <option value="{{ c.pk }}">{{ c.nombre }} ({{ c.correo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <button type="submit" class="btn-erp-gold"
                         style="width:100%;padding:.65rem;font-size:1rem;background:#8d6e26;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
                     Proceder al pago →
@@ -118,6 +188,37 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+function cambiarModoCliente(modo) {
+    document.getElementById('modo_cliente').value = modo;
+    const panelNuevo = document.getElementById('panel-nuevo');
+    const panelExistente = document.getElementById('panel-existente');
+    const tabNuevo = document.getElementById('tab-nuevo');
+    const tabExistente = document.getElementById('tab-existente');
+    const inputNombre = document.getElementById('nuevo_nombre');
+    const inputCorreo = document.getElementById('nuevo_correo');
+    const selectCliente = document.getElementById('cliente_id');
+
+    if (modo === 'nuevo') {
+        panelNuevo.style.display = 'block';
+        panelExistente.style.display = 'none';
+        tabNuevo.classList.add('active');
+        tabExistente.classList.remove('active');
+        inputNombre.required = true;
+        inputCorreo.required = true;
+        selectCliente.required = false;
+    } else {
+        panelNuevo.style.display = 'none';
+        panelExistente.style.display = 'block';
+        tabNuevo.classList.remove('active');
+        tabExistente.classList.add('active');
+        inputNombre.required = false;
+        inputCorreo.required = false;
+        selectCliente.required = true;
+    }
+}
+</script>
+
 {% if client_secret %}
 <script src="https://js.stripe.com/v3/"></script>
 <script>
@@ -158,7 +259,7 @@
         if (error) {
             document.getElementById('card-errors').textContent = error.message;
             btn.disabled = false;
-            btn.textContent = '🔐 Confirmar pago de ${{ totales.total }}';
+            btn.textContent = '🔒 Confirmar pago de ${{ totales.total }}';
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
             window.location.href = '/catalogo/pago-exitoso/{{ pedido.pk }}/';
         }

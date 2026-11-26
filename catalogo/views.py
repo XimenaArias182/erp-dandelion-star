@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 
+from clientes.models import Cliente
 from productos.models import Producto
 from ventas.models import Pedido
 from ventas.tasks import enviar_confirmacion_pedido
@@ -23,7 +24,7 @@ from .filters import ProductoFilter
 stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', 'sk_test_placeholder')
 
 
-# ── CATÁLOGO (W13) ─────────────────────────────────────────────────────────
+# ── CATÁLOGO (W13) ──────────────────────────────────────────────────────────
 
 class CatalogoView(ListView):
     """Catálogo público de productos con filtros."""
@@ -50,7 +51,7 @@ class CatalogoView(ListView):
         return ctx
 
 
-# ── CARRITO EN SESIÓN (W13) ────────────────────────────────────────────────
+# ── CARRITO EN SESIÓN (W13) ─────────────────────────────────────────────────
 
 def _obtener_carrito(request) -> dict:
     return request.session.get('carrito', {})
@@ -164,11 +165,11 @@ def vaciar_carrito(request):
     return redirect('catalogo:carrito')
 
 
-# ── CHECKOUT CON STRIPE (W14 + W15 + W16) ──────────────────────────────────
+# ── CHECKOUT CON STRIPE (W14 + W15 + W16) ───────────────────────────────────
 
 @login_required
 def checkout(request):
-    """Proceso de pago: muestra resumen y crea PaymentIntent de Stripe."""
+    """Proceso de pago: selecciona o registra cliente con correo y crea PaymentIntent."""
     carrito = _obtener_carrito(request)
     if not carrito:
         messages.warning(request, 'Tu carrito está vacío.')
@@ -177,10 +178,64 @@ def checkout(request):
     totales = calcular_totales(carrito)
     publishable_key = getattr(settings, 'STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
     stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', 'sk_test_placeholder')
+    clientes = Cliente.objects.filter(activo=True).order_by('nombre')
+
+    carrito_vista = {
+        k: {
+            **v,
+            'subtotal': f"{Decimal(str(v.get('precio', 0))) * int(v.get('cantidad', 1)):.2f}"
+        }
+        for k, v in carrito.items()
+    }
 
     if request.method == 'POST':
-        try:
+        modo_cliente = request.POST.get('modo_cliente', 'nuevo')
+        cliente_id = request.POST.get('cliente_id', '').strip()
+        nombre_nuevo = request.POST.get('nuevo_nombre', '').strip()
+        correo_nuevo = request.POST.get('nuevo_correo', '').strip().lower()
+        telefono_nuevo = request.POST.get('nuevo_telefono', '').strip()
+
+        cliente = None
+
+        if modo_cliente == 'existente' and cliente_id:
+            cliente = Cliente.objects.filter(pk=cliente_id, activo=True).first()
+            if not cliente:
+                messages.error(request, 'El cliente seleccionado no es válido.')
+                return render(request, 'catalogo/checkout.html', {
+                    'carrito': carrito_vista,
+                    'totales': totales,
+                    'clientes': clientes,
+                    'client_secret': None,
+                    'publishable_key': publishable_key,
+                })
+        elif modo_cliente == 'nuevo':
+            if not nombre_nuevo or not correo_nuevo:
+                messages.error(request, 'Ingresa el nombre y el correo electrónico del cliente para enviarle su confirmación.')
+                return render(request, 'catalogo/checkout.html', {
+                    'carrito': carrito_vista,
+                    'totales': totales,
+                    'clientes': clientes,
+                    'client_secret': None,
+                    'publishable_key': publishable_key,
+                })
+            cliente, creado = Cliente.objects.get_or_create(
+                correo=correo_nuevo,
+                defaults={
+                    'nombre': nombre_nuevo,
+                    'telefono': telefono_nuevo,
+                    'activo': True,
+                }
+            )
+            if not creado:
+                cliente.nombre = nombre_nuevo
+                if telefono_nuevo:
+                    cliente.telefono = telefono_nuevo
+                cliente.activo = True
+                cliente.save()
+        else:
             cliente = obtener_o_crear_cliente(request.user)
+
+        try:
             numero = generar_numero_pedido()
 
             snapshot = [
@@ -206,25 +261,20 @@ def checkout(request):
             intent = stripe.PaymentIntent.create(
                 amount=monto_centavos,
                 currency='mxn',
+                receipt_email=cliente.correo,
                 metadata={
                     'pedido_id': pedido.pk,
                     'pedido_num': pedido.numero_pedido,
                     'cliente': cliente.nombre,
+                    'cliente_correo': cliente.correo,
                 },
                 idempotency_key=f'pedido-{pedido.pk}',
             )
 
-            carrito_vista = {
-                k: {
-                    **v,
-                    'subtotal': f"{Decimal(str(v.get('precio', 0))) * int(v.get('cantidad', 1)):.2f}"
-                }
-                for k, v in carrito.items()
-            }
-
             return render(request, 'catalogo/checkout.html', {
                 'carrito': carrito_vista,
                 'totales': totales,
+                'clientes': clientes,
                 'pedido': pedido,
                 'client_secret': intent.client_secret,
                 'publishable_key': publishable_key,
@@ -245,17 +295,10 @@ def checkout(request):
             )
             return redirect('catalogo:pago_error')
 
-    carrito_vista = {
-        k: {
-            **v,
-            'subtotal': f"{Decimal(str(v.get('precio', 0))) * int(v.get('cantidad', 1)):.2f}"
-        }
-        for k, v in carrito.items()
-    }
-
     return render(request, 'catalogo/checkout.html', {
         'carrito': carrito_vista,
         'totales': totales,
+        'clientes': clientes,
         'client_secret': None,
         'publishable_key': publishable_key,
     })
@@ -273,7 +316,7 @@ def pago_exitoso(request, pedido_id: int):
     messages.success(
         request,
         f'¡Pago exitoso! Tu pedido {pedido.numero_pedido} '
-        f'está confirmado. Recibirás un correo de confirmación pronto.'
+        f'está confirmado. Se enviará confirmación a {pedido.cliente.correo}.'
     )
 
     return render(request, 'catalogo/pago_exitoso.html', {
