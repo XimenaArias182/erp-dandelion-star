@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from productos.models import Producto
 from ventas.models import DetalleVenta, Pedido, Venta
-from ventas.tasks import enviar_confirmacion_pedido
+from ventas.tasks import enviar_confirmacion_pedido, enviar_correo_pedido_inmediato
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,7 @@ def _manejar_pago_exitoso(payment_intent: dict) -> None:
             _descontar_stock(pedido)
             _registrar_venta(pedido)
 
+        enviar_correo_pedido_inmediato(pedido)
         try:
             enviar_confirmacion_pedido.delay(pedido.pk)
         except Exception as _celery_err:
