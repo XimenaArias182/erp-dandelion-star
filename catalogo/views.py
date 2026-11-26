@@ -305,24 +305,36 @@ def checkout(request):
 
 
 def pago_exitoso(request, pedido_id: int):
-    """Vista de confirmación post-pago exitoso (vacía carrito y encola tarea)."""
+    """Confirma el pedido, descuenta stock, registra Venta y envía correo sin webhook."""
+    from django.db import transaction
+    from .webhook_views import _descontar_stock, _registrar_venta
+    from ventas.tasks import enviar_correo_pedido_inmediato
+
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     _guardar_carrito(request, {})
-    try:
-        enviar_confirmacion_pedido.delay(pedido.pk)
-    except Exception as _celery_err:
-        print('CELERY_BROKER_WARN:', _celery_err, flush=True)
+
+    if pedido.estado != 'pagado':
+        with transaction.atomic():
+            pedido.estado = 'pagado'
+            pedido.save(update_fields=['estado'])
+            _descontar_stock(pedido)
+            _registrar_venta(pedido)
+
+        enviar_correo_pedido_inmediato(pedido)
+        try:
+            enviar_confirmacion_pedido.delay(pedido.pk)
+        except Exception as _celery_err:
+            print('CELERY_BROKER_WARN:', _celery_err, flush=True)
 
     messages.success(
         request,
         f'¡Pago exitoso! Tu pedido {pedido.numero_pedido} '
-        f'está confirmado. Se enviará confirmación a {pedido.cliente.correo}.'
+        f'está confirmado. Se envió confirmación a {pedido.cliente.correo}.'
     )
 
     return render(request, 'catalogo/pago_exitoso.html', {
         'pedido': pedido,
     })
-
 
 def pago_error(request):
     """Vista de error de pago."""
